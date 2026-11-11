@@ -1,0 +1,27 @@
+{
+  "_note": "Shared palette for all code-drawn art. 'sheet' colours are sampled from the user's character sheets; 'accent' colours are the designer's. Extend ramps only by adding here, never ad hoc in a bake script.",
+  "outline": "#140b09",
+  "sheet": {
+    "black":  ["#070506", "#1a1818", "#272425", "#373736", "#484746", "#585857", "#686866"],
+    "skin":   ["#a96647", "#c87856", "#e88867", "#f99977", "#faa584"],
+    "hair":   ["#27150c", "#462919", "#66361d", "#864929", "#985736", "#c9a36a"],
+    "sage":   ["#6f8577", "#869a89", "#98a898", "#a8b6a3", "#c4cfbf"],
+    "white":  ["#b9b6b3", "#dedbd8", "#f9f8f8"],
+    "tie":    ["#5c1420", "#8a1c2c", "#b3283a"]
+  },
+  "accent": {
+    "red":     ["#5e1a1e", "#a02a2a", "#d8403a", "#f26b55"],
+    "blue":    ["#182a5c", "#24459a", "#3a6fd8", "#6fa4f2"],
+    "teal":    ["#0f3b3f", "#17666a", "#22a39a", "#5fd6c2"],
+    "green":   ["#16402a", "#237a3f", "#3fb858", "#8fe07a"],
+    "gold":    ["#7a4a12", "#c98a1c", "#f5c23a", "#ffe98a"],
+    "orange":  ["#7a2e10", "#c9561c", "#f58a2e", "#ffc06a"],
+    "magenta": ["#4a1248", "#96208a", "#e040c0", "#ff8ae0"],
+    "purple":  ["#241a4a", "#44308f", "#7654d8", "#b09af2"],
+    "cyan":    ["#0e3a5c", "#1c7ab0", "#38c4f0", "#a8ecff"],
+    "grey":    ["#2b2a33", "#4a4956", "#7a7986", "#b4b3bd", "#e4e3ea"],
+    "ratFur":  ["#3a3438", "#5c545a", "#857c82", "#b5acb0"],
+    "pink":    ["#8a3a52", "#d86a8a", "#f5a0b8"],
+    "cheese":  ["#b0721c", "#f0b030", "#ffd860"]
+  }
+}

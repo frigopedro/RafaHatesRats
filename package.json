@@ -1,0 +1,31 @@
+{
+  "name": "rafa-hates-rats",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "slice": "node scripts/slice-sheet.mjs",
+    "shots": "node scripts/shots.mjs",
+    "bake:bosses": "node scripts/bake-bosses.mjs",
+    "bake:props": "node scripts/bake-props.mjs",
+    "bake:bg": "node scripts/bake-bg.mjs",
+    "bake:kits": "node scripts/bake-kits.mjs",
+    "audio:check": "node scripts/audio-check.mjs",
+    "shots:gallery": "node scripts/shots-gallery.mjs",
+    "shots:ui": "node scripts/shots-ui.mjs"
+  },
+  "dependencies": {
+    "phaser": "3.90.0"
+  },
+  "devDependencies": {
+    "playwright": "1.64.0",
+    "pngjs": "^7.0.0",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.8",
+    "vitest": "^5.1.0"
+  }
+}
