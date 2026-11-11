@@ -1,0 +1,10 @@
+{
+  "_note": "Backgrounds-lane ramps that palette.json lacks (dark→light). Hand-picked to sit between palette steps; used only by art-src/bg/*.",
+  "gymWall": ["#0a2629", "#0f3b3f", "#134a4e", "#17585c", "#17666a", "#1d7775", "#22a39a", "#5fd6c2"],
+  "gymSky": ["#9fe3e0", "#c8f2ec", "#eefcf8"],
+  "rubber": ["#101418", "#171d22", "#20282e", "#2b353c", "#3a464e"],
+  "warm": ["#7a4a12", "#c98a1c", "#f5c23a", "#ffe98a", "#fff6d0"],
+  "plaster": ["#4a3a36", "#6a5648", "#8a7460", "#a8916f", "#c4ad86", "#e0cca0"],
+  "wood": ["#2a1a16", "#3e2a22", "#56392c", "#704a36", "#8a5e42"],
+  "night": ["#0c0818", "#140e22", "#1e1430", "#2a1c40", "#3a2858", "#4e3a72"]
+}

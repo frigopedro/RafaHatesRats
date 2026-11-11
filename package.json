@@ -19,6 +19,7 @@
     "shots:ui": "node scripts/shots-ui.mjs"
   },
   "dependencies": {
+    "@fontsource/jersey-15": "5.3.0",
     "phaser": "3.90.0"
   },
   "devDependencies": {

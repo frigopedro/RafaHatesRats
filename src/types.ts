@@ -2,19 +2,24 @@
 // Units: time in beats (sim tick = 1/120 beat); horizontal positions in beats (blocks = beat × blocksPerBeat);
 // heights and sizes in blocks, y up, ground top = 0. Every chart event is met by Rafa exactly on its `beat`.
 
-export type Theme = 'gym' | 'street' | 'arena';
-export type RafaKit = 'wheelchair' | 'crutches' | 'brace';
+export type Theme = 'gym' | 'church' | 'party';
+export type RafaKit = 'standing' | 'crutches' | 'wheelchair';
+/** Cosmetic boss actor a level brings (src/game/bosses.ts). Level 3 adds 'aranha'. */
+export type BossId = 'fabinho';
 
 export type HazardKind =
   // L1 gym
-  | 'dumbbell' | 'kettlebell' | 'bottle' | 'rat' | 'treadmill' | 'bench' | 'plateRack' | 'plate' | 'bag'
-  // L1 spider boss attacks
-  | 'webBlob' | 'webLine' | 'spiderDive'
-  // L2 street + Fabinho
-  | 'cone' | 'hydrant' | 'trashBag' | 'car' | 'barrier' | 'dumpster' | 'flowerpot'
-  | 'waterBalloon' | 'flipflop' | 'soccerBall'
-  // L3 arena + Rei Rato
-  | 'ropeWave' | 'barbellRack' | 'plyo' | 'flame' | 'shockwave' | 'frisbee' | 'cheese';
+  | 'dumbbell' | 'kettlebell' | 'bottle' | 'rat' | 'plate' | 'ropeWave'
+  | 'treadmill' | 'bench' | 'plateRack' | 'barbellRack' | 'plyo' | 'bag'
+  // L1 Fabinho's attacks
+  | 'frisbee' | 'shockwave' | 'medBall'
+  // L2 church
+  | 'kneeler' | 'flowerBasket' | 'hymnBooks' | 'rice' | 'flowerGirl' | 'ringBearer'
+  | 'pewEnd' | 'candleStand' | 'flowerStand' | 'photographer' | 'dove' | 'lantern'
+  // L3 party
+  | 'giftBox' | 'chair' | 'champagne' | 'table' | 'cakeTable' | 'champagneTower' | 'waiter' | 'balloons' | 'sparkler'
+  // L3 spider boss attacks
+  | 'webBlob' | 'webLine' | 'spiderDive';
 
 export interface HazardDef {
   w: number; // hitbox width, blocks
@@ -67,10 +72,11 @@ export interface Section {
 }
 
 export interface LevelDef {
-  id: number;
+  id: string; // 'gym' | 'church' | 'party' (save key, ?level=)
   name: string; // shown to the player (PT-BR)
-  theme: Theme;
+  theme: Theme; // background (public/art/bg/manifest.json themes[theme]) and platform art
   rafa: RafaKit;
+  boss?: BossId; // cosmetic actor driven by the chart's bossEnter / bossAttack / bossExit cues
   bpm: number;
   blocksPerBeat: number;
   lengthBeats: number; // reaching this beat wins
@@ -152,4 +158,6 @@ export interface GameControl {
   start(): void; // (re)start the run from the start beat
   setPaused(paused: boolean): void;
   readonly running: boolean; // a run is in progress (not over, not waiting to start)
+  readonly coins: number; // golden dumbbells picked up this run
+  readonly smashed: number; // hazards smashed by Gelol this run
 }

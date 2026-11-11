@@ -6,11 +6,16 @@ import { OVERDRIVE } from '../config';
 export class BeatClock {
   private t0 = 0; // performance.now() ms at the anchor
   private b0 = 0; // beat at the anchor
-  private running = false;
+  private on = false;
   private odFrom = 0;
   private odUntil = 0;
 
   constructor(readonly bpm: number) {}
+
+  /** The beat is advancing (started and not paused). */
+  get running(): boolean {
+    return this.on;
+  }
 
   /** Beats per ms at `beat`. */
   private rate(beat: number): number {
@@ -23,7 +28,7 @@ export class BeatClock {
 
   /** Current beat (frozen while paused). */
   beat(now = performance.now()): number {
-    if (!this.running) return this.b0;
+    if (!this.on) return this.b0;
     for (;;) {
       const r = this.rate(this.b0);
       const b = this.b0 + (now - this.t0) * r;
@@ -44,16 +49,16 @@ export class BeatClock {
   reanchor(beat: number): void {
     this.t0 = performance.now();
     this.b0 = beat;
-    this.running = true;
+    this.on = true;
   }
 
   pause(): void {
     this.b0 = this.beat();
-    this.running = false;
+    this.on = false;
   }
 
   resume(): void {
-    if (!this.running) this.reanchor(this.b0);
+    if (!this.on) this.reanchor(this.b0);
   }
 
   /** Overdrive window in whole beats (from the sim's overdriveFrom/Until). */
@@ -66,7 +71,7 @@ export class BeatClock {
    *  the overdrive window. An audio engine maps it to its own
    *  clock with ctx.currentTime + (timeAt(beat) − performance.now()) / 1000, so notes share this anchor. */
   timeAt(beat: number): number {
-    let t = this.running ? this.t0 : performance.now();
+    let t = this.on ? this.t0 : performance.now();
     let b = this.b0;
     for (;;) {
       const r = this.rate(b);

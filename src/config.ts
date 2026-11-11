@@ -23,38 +23,59 @@ export const DROP_FALL_BEATS = 1; // a `drop` hazard is visible and falling for 
 export const DROP_SHADOW_BEATS = 2; // ground shadow appears this long before a `drop`/`lob` lands
 export const HIGH_Y = 1.7; // hazards whose bottom is at or above this are "high": stay on the ground
 
-/** Hitboxes are forgiving: small ≤ 0.7 × 0.6, big ≤ 1.4 × 1.2 (DESIGN §1). L2/L3 values are provisional. */
+/** Hitboxes are forgiving: small ≤ 0.7 × 0.6, big ≤ 1.4 × 1.2 (DESIGN §2–3). `art` = props/bosses atlas frame
+ *  (or the `<art>_0..n` animation). High hazards (bag, lantern, dove, balloons, high frisbee/webLine) are 'big' so Gelol
+ *  never makes a jump into them safe. */
 export const HAZARDS: Record<HazardKind, HazardDef> = {
+  // L1 gym
   dumbbell: { w: 0.6, h: 0.45, size: 'small', art: 'dumbbell' },
   kettlebell: { w: 0.55, h: 0.6, size: 'small', art: 'kettlebell' },
   bottle: { w: 0.35, h: 0.6, size: 'small', art: 'bottle' },
-  rat: { w: 0.6, h: 0.4, size: 'small', art: 'rat' },
-  plate: { w: 0.7, h: 0.35, size: 'small', art: 'plate' },
+  rat: { w: 0.6, h: 0.4, size: 'small', art: 'rat_run' },
+  plate: { w: 0.7, h: 0.35, size: 'small', art: 'plate' }, // drawn lying flat (plate_flat) once on the floor
+  ropeWave: { w: 0.7, h: 0.5, size: 'small', art: 'ropeWave' },
   treadmill: { w: 1.4, h: 0.9, size: 'big', art: 'treadmill' },
   bench: { w: 1.2, h: 0.8, size: 'big', art: 'bench' },
   plateRack: { w: 1.0, h: 1.2, size: 'big', art: 'plateRack' },
+  barbellRack: { w: 1.4, h: 1.2, size: 'big', art: 'barbellRack' },
+  plyo: { w: 1.2, h: 1.1, size: 'big', art: 'plyo' },
   bag: { w: 0.6, h: 1.0, size: 'big', art: 'bag' },
+  // L1 Fabinho
+  frisbee: { w: 0.7, h: 0.3, size: 'small', art: 'frisbee' },
+  shockwave: { w: 0.7, h: 0.45, size: 'small', art: 'shockwave' },
+  medBall: { w: 0.55, h: 0.55, size: 'small', art: 'medBall' },
+  // L2 church
+  kneeler: { w: 0.7, h: 0.4, size: 'small', art: 'kneeler' },
+  flowerBasket: { w: 0.6, h: 0.5, size: 'small', art: 'flowerBasket' },
+  hymnBooks: { w: 0.6, h: 0.4, size: 'small', art: 'hymnBooks' },
+  rice: { w: 0.6, h: 0.4, size: 'small', art: 'rice' },
+  flowerGirl: { w: 0.6, h: 0.6, size: 'small', art: 'flowerGirl' },
+  ringBearer: { w: 0.6, h: 0.6, size: 'small', art: 'ringBearer' },
+  pewEnd: { w: 1.0, h: 1.2, size: 'big', art: 'pewEnd' },
+  candleStand: { w: 0.6, h: 1.2, size: 'big', art: 'candleStand' },
+  flowerStand: { w: 0.9, h: 1.2, size: 'big', art: 'flowerStand' },
+  photographer: { w: 1.2, h: 1.2, size: 'big', art: 'photographer' },
+  dove: { w: 0.7, h: 0.4, size: 'big', art: 'dove' },
+  lantern: { w: 0.6, h: 0.8, size: 'big', art: 'lantern' },
+  // L3 party
+  giftBox: { w: 0.6, h: 0.55, size: 'small', art: 'giftBox' },
+  chair: { w: 0.7, h: 0.5, size: 'small', art: 'chair' },
+  champagne: { w: 0.35, h: 0.6, size: 'small', art: 'champagne' },
+  table: { w: 1.4, h: 1.0, size: 'big', art: 'table' },
+  cakeTable: { w: 1.2, h: 1.2, size: 'big', art: 'cakeTable' },
+  champagneTower: { w: 0.9, h: 1.2, size: 'big', art: 'champagneTower' },
+  waiter: { w: 0.9, h: 1.2, size: 'big', art: 'waiter' },
+  balloons: { w: 0.8, h: 0.9, size: 'big', art: 'balloons' },
+  sparkler: { w: 0.6, h: 1.0, size: 'big', art: 'sparkler' },
+  // L3 O Aranha
   webBlob: { w: 0.6, h: 0.5, size: 'small', art: 'webBlob' },
   webLine: { w: 1.6, h: 0.35, size: 'big', art: 'webLine' },
   spiderDive: { w: 1.2, h: 1.1, size: 'big', art: 'spiderDive' },
-  cone: { w: 0.5, h: 0.6, size: 'small', art: 'cone' },
-  hydrant: { w: 0.5, h: 0.6, size: 'small', art: 'hydrant' },
-  trashBag: { w: 0.7, h: 0.5, size: 'small', art: 'trashBag' },
-  car: { w: 1.4, h: 1.1, size: 'big', art: 'car' },
-  barrier: { w: 1.2, h: 0.9, size: 'big', art: 'barrier' },
-  dumpster: { w: 1.4, h: 1.2, size: 'big', art: 'dumpster' },
-  flowerpot: { w: 0.5, h: 0.5, size: 'small', art: 'flowerpot' },
-  waterBalloon: { w: 0.6, h: 0.4, size: 'small', art: 'waterBalloon' },
-  flipflop: { w: 0.6, h: 0.3, size: 'small', art: 'flipflop' },
-  soccerBall: { w: 0.55, h: 0.55, size: 'small', art: 'soccerBall' },
-  ropeWave: { w: 0.7, h: 0.5, size: 'small', art: 'ropeWave' },
-  barbellRack: { w: 1.4, h: 1.2, size: 'big', art: 'barbellRack' },
-  plyo: { w: 1.2, h: 1.1, size: 'big', art: 'plyo' },
-  flame: { w: 0.6, h: 1.0, size: 'big', art: 'flame' },
-  shockwave: { w: 0.7, h: 0.45, size: 'small', art: 'shockwave' },
-  frisbee: { w: 0.7, h: 0.3, size: 'small', art: 'frisbee' },
-  cheese: { w: 1.3, h: 1.2, size: 'big', art: 'cheese' },
 };
+
+/** Boss actors stand this many blocks ahead of Rafa while fighting; an attack is released (leaves the boss's hands)
+ *  when its hazard is here, so charts time attacks with releaseBeat() in src/sim/behaviors.ts. */
+export const BOSS_AHEAD = 9;
 
 /** Renderer: logical view 1080 px tall, 1 block = 96 px; Rafa pinned 28% from the left. */
 export const VIEW = {

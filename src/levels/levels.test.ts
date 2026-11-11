@@ -23,4 +23,13 @@ describe.each(LEVELS)('level $id — $name', (def) => {
       PHYS.minHoldTicks = minHold;
     }
   });
+  it('needs the big jump: with no jump bigger than a hop it is not beatable', () => {
+    const v = PHYS.jumpVel;
+    PHYS.jumpVel = 10.3; // uncut apex ≈ 2.2 blocks and a bit more airtime than a real hop, so this only over-helps
+    try {
+      expect(solve(def, { marginMs: def.marginMs }).ok).toBe(false);
+    } finally {
+      PHYS.jumpVel = v;
+    }
+  });
 });

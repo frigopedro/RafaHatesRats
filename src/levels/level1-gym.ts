@@ -1,22 +1,33 @@
-// Level 1 — Campeonato Gym Rats. 120 BPM, 144 beats. Draft chart for M0 (to be synced to its song in M2).
+// Level 1 — Campeonato Gym Rats. 120 BPM, 144 beats, boss: Fabinho.
 // Reading guide: a tap (hop) clears small things, a hold (big jump) clears big ones, high things mean "stay down".
 // Hop ≈ press 0.35 beat before the hazard; big jump ≈ press half a beat before (on the "and").
-import type { LevelDef } from '../types';
-import { attack, bossEnter, bossExit, coinArc, coinLine, hint, hz, item, rep } from './dsl';
+// Teaches one thing at a time: hop (warmup), big jump (warmup), stay down (main), then the same three as Fabinho's
+// attacks: low plate = hop, high plate = stay down, shockwave = hop, low med ball = hop, high med ball = stay down.
+import type { HazardEvent, LevelDef } from '../types';
+import { attack, bossEnter, bossExit, bossMove, coinArc, coinLine, hint, hz, item, rep } from './dsl';
 
 const HOP = 0, BIG = 0.5; // hold lengths for coin arcs
-const blob = (beat: number) => attack(hz(beat, 'webBlob', { b: 'lob', lead: 1, flight: 1, dx: 8, dy: 6 }), 'webBlob');
-const line = (beat: number) => attack(hz(beat, 'webLine', { b: 'fly', y: 1.75, speed: 1 }), 'webLine');
-const dive = (beat: number) => attack(hz(beat, 'spiderDive', { b: 'fly', y: 0, speed: 3 }), 'swingDive', 2);
+const HIGH = 2.3; // high hazards hang above standing Rafa's head (≈ 2.3 blocks), so they read as "stay down"
 const rat = (beat: number, speed = 2) => hz(beat, 'rat', { b: 'run', speed });
-const plate = (beat: number) => hz(beat, 'plate', { b: 'drop', lead: 1 });
-const bag = (beat: number) => hz(beat, 'bag', { b: 'static', y: 1.8 });
+const dropPlate = (beat: number) => hz(beat, 'plate', { b: 'drop', lead: 1 });
+const bag = (beat: number) => hz(beat, 'bag', { b: 'static', y: HIGH });
+// Fabinho's attacks all close at 2 blocks/beat, so each leaves his hands 1.5 beats before Rafa meets it.
+// A high plate is thin, so it flies a little higher than the bags to clear her hair visibly.
+const disc = (beat: number, high = false) =>
+  attack(hz(beat, 'frisbee', { b: 'fly', y: high ? HIGH + 0.3 : 0.6, speed: 2 }), high ? 'frisbeeHigh' : 'frisbeeLow');
+const wave = (beat: number) => attack(hz(beat, 'shockwave', { b: 'run', speed: 2 }), 'shockwave', 1.5); // wind-up = the leap
+const ball = (beat: number, high = false) => attack(hz(beat, 'medBall', high
+  ? { b: 'bounce', speed: 2, height: 2.4, period: 1, phase: 0.5 } // on the floor at his hands, over her head when met
+  : { b: 'bounce', speed: 2, height: 0.8, period: 0.75 }), high ? 'medBallHigh' : 'medBallLow');
+const smashRow = (from: number, n: number): HazardEvent[] =>
+  rep(from, 0.5, n, (b, i) => (i % 2 ? rat(b, 3) : hz(b, i % 4 ? 'kettlebell' : 'dumbbell'))) as HazardEvent[];
 
 export const level1: LevelDef = {
-  id: 1,
+  id: 'gym',
   name: 'Campeonato Gym Rats',
   theme: 'gym',
-  rafa: 'wheelchair',
+  rafa: 'standing',
+  boss: 'fabinho',
   bpm: 120,
   blocksPerBeat: 4,
   lengthBeats: 144,
@@ -26,69 +37,86 @@ export const level1: LevelDef = {
     { beat: 0, name: 'intro' },
     { beat: 8, name: 'warmup' },
     { beat: 40, name: 'main' },
-    { beat: 72, name: 'gelol' },
-    { beat: 96, name: 'bossEnter' },
-    { beat: 100, name: 'boss1' },
-    { beat: 112, name: 'boss2' },
-    { beat: 124, name: 'boss3' },
+    { beat: 64, name: 'gelol' },
+    { beat: 80, name: 'bossEnter' },
+    { beat: 88, name: 'boss1' },
+    { beat: 104, name: 'boss2' },
+    { beat: 120, name: 'boss3' },
     { beat: 136, name: 'finale' },
   ],
   ground: [[-8, 152]],
   chart: [
-    // Warm-up (8–40): single small hazards, then rats, then big ones.
+    // Intro (0–8): count-in; a line of dumbbells on the floor shows what to collect.
+    ...coinLine(4, 0.5, 6, 0.3),
+
+    // Warm-up (8–40): single small hazards (tap), then rats, then big ones (hold).
     hint(10, 'TOQUE!'),
     hz(12, 'dumbbell'), ...coinArc(11.65, HOP, 3),
-    hz(16, 'kettlebell'),
-    hz(20, 'bottle'), ...coinArc(19.65, HOP, 3),
-    hz(22, 'dumbbell'),
-    rat(24), rat(26),
-    hz(28, 'dumbbell'), hz(29, 'kettlebell'),
+    hz(15, 'kettlebell'),
+    hz(18, 'bottle'), ...coinArc(17.65, HOP, 3),
+    hz(20, 'dumbbell'),
+    rat(22), rat(24),
+    hz(26, 'ropeWave'),
+    hz(28, 'plate'),
     hint(30, 'SEGURE!'),
     hz(32, 'bench'), ...coinArc(31.5, BIG, 5),
     hz(35, 'treadmill'),
     hz(38, 'plateRack'), ...coinArc(37.5, BIG, 5),
 
-    // Main (40–72): combos, high bags, falling plates, Whey and Pré-treino.
-    item(40, 'whey'),
+    // Main (40–64): stay down under the bags, falling plates, combos, Whey and Pré-treino.
     hint(41, 'NÃO PULE!'),
-    bag(42), bag(43),
-    hz(45, 'dumbbell'), bag(45.6), // tap, don't hold: a big jump is still airborne under the bag
-    plate(48),
-    hz(50, 'bench'), hz(52, 'kettlebell'), hz(53, 'bottle'), bag(53.6),
-    rat(55, 3), bag(55.6),
-    item(56, 'pre'),
-    hz(58, 'treadmill'), ...coinLine(58, 0.25, 5, 4.6), // high line: only with the pré-treino air jump
-    plate(60), hz(61, 'dumbbell'),
-    hz(62.5, 'kettlebell'), bag(63.5),
-    hz(65, 'plateRack'),
-    rat(66, 3), rat(67),
-    hz(69, 'bench'), ...coinArc(68.5, BIG, 5),
+    bag(43), bag(44), ...coinLine(42.5, 0.5, 4, 0.3),
+    hz(46, 'dumbbell'), bag(46.6), // tap, don't hold: a big jump is still airborne under the bag
+    item(48, 'whey'),
+    dropPlate(50),
+    hz(52, 'barbellRack'), ...coinArc(51.5, BIG, 5),
+    hz(54, 'kettlebell'), hz(55, 'bottle'), bag(55.6),
+    rat(57, 3), bag(57.6),
+    item(58.5, 'pre'),
+    hz(60, 'plyo'), ...coinLine(60, 0.25, 5, 4.6), // high line: only with the pré-treino air jump
+    dropPlate(62), hz(63, 'ropeWave'),
 
-    // Gelol corridor (72–96): two Gelols chain 24 beats of overdrive; small stuff gets smashed, big still needs a jump.
-    item(71, 'gelol'),
-    hint(71.5, 'ESMAGA!'),
-    ...rep(72, 0.5, 12, (b) => (b % 1 ? rat(b, 2) : hz(b, b % 2 ? 'dumbbell' : 'kettlebell'))),
-    hz(79, 'bench'),
-    ...rep(80.5, 0.5, 6, (b) => hz(b, 'bottle')),
-    item(83.5, 'gelol'),
-    ...rep(84, 0.5, 8, (b) => rat(b, 3)),
-    hz(88.5, 'treadmill'),
-    ...rep(90, 0.5, 8, (b) => (b % 1 ? hz(b, 'dumbbell') : rat(b))),
-    hz(94, 'plateRack'),
+    // Gelol corridor (64–80): overdrive 66–78 smashes the small stuff; big ones still need the big jump.
+    hint(64.5, 'ESMAGA!'),
+    item(65, 'gelol'),
+    ...smashRow(66, 8),
+    hz(70, 'bench'),
+    ...smashRow(71.5, 5),
+    hz(74.5, 'treadmill'),
+    ...smashRow(76, 4),
 
-    // Spider boss (96–136): web blobs (hop), web lines at head height (stay down), swing-dives (big jump).
-    bossEnter(96),
-    ...blob(101), ...blob(103), ...blob(105), ...blob(106), ...blob(108), ...blob(110),
-    ...coinArc(105.65, HOP, 3),
-    ...line(113), ...blob(114), ...line(116), ...blob(117), ...line(117.7), ...line(120), ...line(121), ...blob(122),
-    item(119, 'whey'),
-    ...dive(126), ...blob(128), ...dive(130), ...line(131), ...blob(132), ...dive(134),
-    ...coinArc(129.5, BIG, 5),
+    // Fabinho enters (80–88): overtakes her, then shows off with push-ups. Whey for the fight.
+    bossEnter(80),
+    bossMove(84, 'pushups'),
+    item(85, 'whey'), ...coinLine(86, 0.5, 4, 0.3),
 
-    // Finale (136–144): a Gelol appears and Rafa rams the boss.
-    item(137, 'gelol'),
-    ...blob(139), ...blob(139.5),
-    bossExit(140),
-    ...coinLine(141, 0.5, 6, 0.4),
+    // Boss 1 (88–104): weight plates. Low ones: hop. High ones: stay down.
+    ...disc(91), ...disc(93), ...disc(95),
+    hint(96, 'NÃO PULE!'),
+    ...disc(98, true), ...disc(100, true),
+    ...disc(101.5),
+    bossMove(102.5, 'situps'),
+
+    // Boss 2 (104–120): he leaps and lands a shockwave (hop), mixed with plates and gym gear.
+    ...wave(108),
+    hz(110, 'bench'), ...coinArc(109.5, BIG, 5),
+    ...wave(112),
+    ...disc(114.5, true),
+    hz(116, 'dumbbell'),
+    ...wave(118),
+    bossMove(118.5, 'pushups'),
+
+    // Boss 3 (120–136): medicine balls — over the low bounce, under the high one — then everything at once.
+    ...ball(124),
+    ...ball(127, true),
+    ...disc(129),
+    ...ball(131, true),
+    ...wave(133),
+    item(134, 'gelol'),
+
+    // Finale (136–144): Gelol smash-through, she overtakes him, finish line.
+    ...smashRow(136, 6),
+    bossExit(138),
+    ...coinLine(141, 0.5, 6, 0.3),
   ],
 };

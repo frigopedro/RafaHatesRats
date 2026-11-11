@@ -1,0 +1,210 @@
+{
+ "_note": "Data for scripts/bake-kits.mjs. Crops are sheet px (x, y, w, h); polygons, waist and hip are crop px. keep = body outline, erase = the far hand peeking at the waist. c_upper = crutches (push_2), s_upper = standing (side_2).",
+ "uppers": {
+  "c_upper": {
+   "from": "push_2",
+   "crop": [
+    296,
+    620,
+    135,
+    190
+   ],
+   "waist": 102,
+   "hip": [
+    68,
+    102
+   ],
+   "keep": [
+    [
+     14,
+     0
+    ],
+    [
+     135,
+     0
+    ],
+    [
+     135,
+     102
+    ],
+    [
+     90,
+     102
+    ],
+    [
+     70,
+     110
+    ],
+    [
+     69,
+     128
+    ],
+    [
+     60,
+     132
+    ],
+    [
+     50,
+     130
+    ],
+    [
+     44,
+     119
+    ],
+    [
+     37,
+     109
+    ],
+    [
+     33,
+     99
+    ],
+    [
+     33,
+     88
+    ],
+    [
+     38,
+     84
+    ],
+    [
+     30,
+     77
+    ],
+    [
+     20,
+     74
+    ],
+    [
+     14,
+     60
+    ]
+   ],
+   "erase": [
+    [
+     78,
+     92
+    ],
+    [
+     92,
+     92
+    ],
+    [
+     92,
+     108
+    ],
+    [
+     78,
+     108
+    ]
+   ]
+  },
+  "s_upper": {
+   "from": "side_2",
+   "crop": [
+    1335,
+    630,
+    89,
+    186
+   ],
+   "waist": 104,
+   "hip": [
+    42,
+    104
+   ],
+   "keep": [
+    [
+     0,
+     0
+    ],
+    [
+     80,
+     0
+    ],
+    [
+     80,
+     104
+    ],
+    [
+     71,
+     104
+    ],
+    [
+     71,
+     121
+    ],
+    [
+     40,
+     118
+    ],
+    [
+     27,
+     116
+    ],
+    [
+     22,
+     108
+    ],
+    [
+     22,
+     93
+    ],
+    [
+     15,
+     90
+    ],
+    [
+     0,
+     86
+    ]
+   ]
+  }
+ },
+ "ramps": {
+  "_note": "Sampled from the sheet (push_3 lap/shin, part_chair_side tubes, push_0 shoe, skin, palette white); dark to light. The skirt ramp is re-tinted at bake time toward the bodice above each waist cut.",
+  "sage": [
+   "#2c3a37",
+   "#445853",
+   "#5d736d",
+   "#6f8577",
+   "#869a89",
+   "#93a393",
+   "#9cac9c",
+   "#a8b6a3",
+   "#b3c0ad",
+   "#c4cfbf"
+  ],
+  "sageLining": [
+   "#22302d",
+   "#34463f",
+   "#4b5f58"
+  ],
+  "outlineDress": "#070b06",
+  "outlineSkin": "#060000",
+  "outlineChair": "#030303",
+  "black": [
+   "#020202",
+   "#0d0d0d",
+   "#181717",
+   "#211f1f",
+   "#2e2d2c",
+   "#454444",
+   "#656668",
+   "#8c8c8e"
+  ],
+  "skin": [
+   "#a96647",
+   "#c87856",
+   "#e69b70",
+   "#f3a374",
+   "#f6ad80"
+  ],
+  "bandage": [
+   "#8f8a84",
+   "#b9b6b3",
+   "#d4d0cb",
+   "#e8e5e1",
+   "#f9f8f8"
+  ]
+ }
+}

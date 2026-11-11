@@ -1,266 +1,148 @@
-# RafaHatesRats — design and build plan
+# RafaHatesRats — design (current source of truth)
 
-## Context
+A 2D auto-runner rhythm game for the browser, iPhone landscape first. Phaser 3.90 + TypeScript + Vite. All text in Brazilian Portuguese. It is an inside joke among friends and should not take itself seriously.
 
-The goal is a complete, playable 2D auto-runner rhythm game for the browser (iPhone first), built with Phaser 3 + TypeScript + Vite, with pixel art, original music and three levels ending in boss sequences. The project folder holds one file: your Rafa sprite sheet.
+Roles: the designer/director (Fable) owns this document and reviews; engineers (Opus agents) write all code. Where code and this document disagree about *as-built mechanics*, `src/types.ts` and `src/config.ts` win; where they disagree about *what the game should be*, this document wins.
 
-Roles: **Fable designs and directs** (this document, art/level/audio direction, screenshot reviews). **Opus subagents write all code** (Agent tool, `model: "opus"`). This file is copied into the repo as `docs/DESIGN.md` in milestone 0 so every Opus agent reads the same brief.
+## 1. Story and levels
 
-Your answers so far: text in **Português (BR)** · **pixel art** built around your characters, with animations · hosting **local only for now** (static `dist/`, playable on the iPhone over Wi-Fi).
+Rafa and Fabinho compete for first place in Gym Rats. She wins, and wrecks her knee doing it. Next she is bridesmaid (madrinha) at Nathalia and Murilo's wedding, on a crutch, walked in by Giovanni. Then comes the wedding party, in a wheelchair, where a knockoff spider-hero dancer arrives on a party train.
 
-## What your Rafa sheet gives us
-
-`937F15EE-…C7CE.PNG` (1536×1024) already has a transparent background and separates cleanly into **40 sprites**. Rafa's look comes from it: brown-to-blonde wavy hair in a half ponytail, sage-green dress, black wheelchair.
-
-| On the sheet | Used for |
-|---|---|
-| 5-frame wheelchair push cycle (row 3) | **In-game move animation**, one push per beat |
-| 4 small side views (row 3) | In-game idle |
-| Arms-up pose (row 2) | Jump apex / fall, and the victory celebration |
-| Pointing pose | Gelol ignition and boss taunt |
-| Waving, front and 3/4 views | Main menu and level cards |
-| On-her-phone pose | Pause screen |
-| Arms-crossed, chin-on-hand | Game over, rotate-your-phone screen |
-| 8 face expressions | **Live HUD portrait** that reacts (grin under Gelol, angry at rats, shocked on a crash), game-over and victory cards, app icon |
-| Loose wheel and chair parts | Crash debris (a wheel rolls away), spinning-wheel overlay |
-| 3 back views | Level-complete exit |
-
-**Still to derive (no source art):** Rafa on crutches and Rafa with the knee brace. Both reuse her exact head, hair and upper body from the sheet with a newly drawn standing lower half (the long dress hides the legs, which keeps this clean). The knee brace is strapped **over the dress** — visible, and funnier.
-
-### Fabinho's sheet
-
-`art-src/characters/fabinho-sheet.png` (1536×1024, transparent, **47 sprites**): a boy in a black suit and red tie. Used at 1:1 like Rafa (standing ~238 px, about 2.5 blocks — taller than seated Rafa, which is right).
-
-| On the sheet | Used for |
-|---|---|
-| 5-frame run cycle (row 2) | **Chasing Rafa**, phase-locked to the beat |
-| 2 leap frames, arms up (row 2) | Jumping ahead of Rafa |
-| Crouch + half-squat (row 2, right) | Landing, attack wind-up |
-| Wave (arm raised) → pointing (arm extended) (row 4) | **Throw**: wind-up then release |
-| Push-ups, sit-ups, squat, lunge, stretches (row 3) | Taunts between attack phases (he works out mid-fight) |
-| Arms crossed, thinking, thumbs up, on phone, drinking (row 4) | Boss entrance, idle, level card teaser |
-| 3-frame walk + turnaround (row 1) | Entrance walk, level card |
-| 9 faces: laughing ×5, shocked ×2, angry ×2 (row 5) | Boss portrait in the HUD; **laughing face on the level-2 game-over card**; shocked/angry when beaten |
-| Lying face-down, sitting sulking (row 5, right) | Defeated |
-
-### Spider boss: two reference poses (must be in the game)
-
-`art-src/characters/spider-pos1.jpg` and `spider-pos2.jpg` are **pose references only** — photos of a costumed party performer dancing. They are never shipped, traced pixel-for-pixel, or copied into `public/`. The boss is drawn as original pixel art in the style of the two character sheets: **"O Aranha da Carreta"** — the kind of knockoff spider-hero dancer you see on a Brazilian *trenzinho da alegria*, **dancing funk**. Off-model red-and-blue costume that's a bit baggy and wrinkled, own simplified web pattern, own chest emblem, lopsided white eyes, and **sneakers worn over the suit** (as in photo 1). Not Marvel's suit design, and no real group's name, logo or truck livery.
-
-**Everything he does is a dance move.** He arrives on the roof of an original little party train (coloured lights, big speakers pulsing on the beat) that crashes through the gym wall and rolls along ahead of Rafa — that is his stage for the whole fight. When he enters, the music switches to a funk beat.
-
-| Pose | What it is | Used for |
-|---|---|---|
-| **Pose 1** (`spider-pos1.jpg`) | Deep one-sided squat on the dance floor: one knee up, other leg folded out, body turned 3/4, one arm braced down behind | **His idle/taunt** — he drops into it and bounces on every beat between attacks |
-| **Pose 2** (`spider-pos2.jpg`) | Wide, low straddle stance facing sideways, torso leaning forward, one arm reaching out with the hand hanging, other hand planted on the knee | **Attack wind-up** before the swing-dive, and the **level-1 game-over card**: him in this pose right beside Rafa's wheelchair, as in the photo |
-
-These two are the signature poses and get the most drawing care. The other states he needs are drawn to match: a funk two-step (2–4 frames, for when he isn't squatting), web shot with one arm flung out mid-dance, a tucked backflip (the dive), and wrapped up in defeat.
-
-## Decisions that differ from the spec
-
-| Spec | Plan | Why |
-|---|---|---|
-| "Recognizable Spider-Man" | **"O Aranha Genérico"**: a party performer in an off-model spider costume with sneakers over the suit, drawn as original pixel art in the two poses from your reference photos. | I won't reproduce Marvel's suit design. Your poses are kept exactly; the costume is a knockoff, which fits the humour. |
-| React for menus "if useful" | Plain HTML/CSS overlay + TypeScript | Eight simple screens; React adds a build layer and nothing else. |
-| Health via Whey | Whey = **one-hit shield** (no health bar) | Keeps "collision restarts the level" true. |
-| Game-over screen vs. instant restart | Compact game-over card; **tap anywhere retries** | Shows the jokes without slowing the retry loop. |
-
-## 1. Core rules
-
-Everything is measured in **beats and blocks**, not seconds and pixels. The view shows about 11 blocks of height; width follows the screen (4:3 … 21:9); Rafa is pinned 28% from the left.
-
-- Rafa's x = `beat × 4` blocks, always. An obstacle charted at beat N is exactly where she is on beat N, so the chart is music-synced by construction.
-- **Tap = hop**, **hold = big jump** (releasing early cuts the rise). A press is buffered 0.25 beat before landing; coyote time 0.15 beat.
-- Starting tuning (the solver in §6 is the authority):
-
-| | Airtime | Apex | Distance |
+| | 1 — Campeonato Gym Rats | 2 — A Madrinha | 3 — A Festa |
 |---|---|---|---|
-| Big jump (hold) | 1.0 beat | 3.0 blocks | 4 blocks |
-| Hop (tap, min hold 0.12 beat) | ~0.78 beat | ~1.7 blocks | ~3.1 blocks |
-
-- Hitboxes are forgiving: player 0.7 × 1.3 blocks (her sprite is about 1.35 × 1.9); **small** hazards ≤ 0.7 × 0.6; **big** hazards ≤ 1.4 × 1.2.
-- **High hazards** fly at 1.7–2.6 blocks: stay on the ground. These create "don't jump!" beats.
-- Ground is a list of segments (gaps = holes, falling in = death). Platforms are one-way, static or moving.
-- Death → 250 ms crash → game-over card → tap anywhere restarts at beat 0 with no page reload.
-
-### Hazard behaviours (each a pure function of the beat)
-
-`static` · `drop` (falls, lands on its beat, ground shadow warns 2 beats early) · `run` (moves along the ground: rats, cheese wheel, shockwave) · `bounce` (soccer ball) · `lob` (thrown arc landing on its beat) · `fly` (horizontal, low or high) · `pulse` (on/off with the beat: arena flame jets).
-
-### Power-ups
-
-| Item | Effect |
-|---|---|
-| **Gelol** (signature) | 12 beats of overdrive, starting on the next beat: the whole game clock runs ×1.3 (the music speeds up with it and charts stay valid), small hazards are smashed on contact, fire trail, heat glow, extra music layer, HUD portrait switches to the big grin. HUD shows a draining timer. |
-| Whey | One-hit shield, max one held. Breaking it gives 1 beat of invulnerability. Does not save from holes. |
-| Pré-treino | 8 beats of mid-air double jump (jittery caffeine shake). Reaches high lines of golden dumbbells; never required. |
-| Halter dourado | Collectible coin. Lines of them trace the ideal jump arcs. Count shown on victory; best saved. |
-
-**Rats** scurry toward Rafa as small hazards in every level (the title's payoff). Under Gelol they get punted off-screen.
-
-## 2. Levels
-
-Each level is one config file: BPM, theme, Rafa version, song, sections, chart. Sections are shared by chart and song so both change together.
-
-| | 1 — Campeonato Gym Rats | 2 — A Vingança do Fabinho | 3 — A Última Rep |
-|---|---|---|---|
-| Rafa | Wheelchair | Crutches | Knee brace |
-| BPM / length | 120 / 144 beats (72 s) | 132 / 176 beats (80 s) | 144 / 208 beats (87 s) |
-| Small hazards | dumbbell, kettlebell, water bottle, rat | cone, hydrant, trash bag, rat | plate, battle-rope wave, rat |
-| Big hazards | treadmill, bench, plate rack | car, street barrier, dumpster | barbell rack, plyo stack |
-| Special | falling plates, hanging punching bag (high) | holes, open manholes, scaffold lifts (moving platforms), falling flowerpots | moving platforms over a foam pit, plate rain, flame jets on the beat |
+| id / theme / songId | `gym` | `church` | `party` |
+| Place | The gym | The church, down the aisle | The wedding reception |
+| Rafa (`LevelDef.rafa`) | `standing` — on her feet | `crutches` | `wheelchair` |
+| With / against | Boss: **Fabinho** | Companion: **Giovanni**. **No boss** — reach the altar before the bride | Boss: **O Aranha da Carreta** on his party train |
+| BPM / length | 120 / 144 beats | 132 / 176 beats | 144 / 208 beats |
 | Timing margin (solver) | ±60 ms | ±45 ms | ±35 ms |
-| Boss | Spider boss | Fabinho | Rei Rato |
+| Ending | "1º LUGAR!" … then her knee goes: "LCA destruído." | She takes her place at the altar beside Nathalia and Murilo: "Chegou a tempo, madrinha!" | Gelol, she rams him into the train's speaker, then dances |
 
-Section template (level 1; 2 and 3 follow the same shape, longer): intro and count-in (0–8) → warm-up with "TOQUE!" / "SEGURE!" hint signs (8–40) → main combos, Whey, Pré-treino (40–72) → **Gelol corridor** (72–96) → boss entrance (96–100) → boss in three phases (100–136) → finale (136–144).
+Section template for every level (names are shared with the songs): `intro` (count-in, no hazards) → `warmup` (single obstacles, "TOQUE!" / "SEGURE!" hint signs in level 1) → `main` (combos, Whey, Pré-treino) → `gelol` (Gelol corridor) → `bossEnter` → `boss1` → `boss2` → `boss3` → `finale`. Level 2 has no boss: its `bossEnter`…`boss3` are the final dash ("A noiva tá chegando!").
 
-### Bosses
+## 2. Core rules (as built)
 
-A boss is a **visual actor driven by the chart**. Its attacks are ordinary hazards with the behaviours above, so the simulation knows nothing about bosses and the solver covers boss sections too. Each attack is telegraphed 1–2 beats early and lands on a beat. Every finale is the same gag: a Gelol appears and Rafa rams the boss.
+Everything is in **beats and blocks**. 1 block = 96 px at the logical 1080 px view height; Rafa is pinned 28% from the left; x = beat × 4 blocks, so an event charted at beat N is met exactly on beat N.
 
-| Boss | Attacks (what the player does) | Defeat |
+- **Tap = hop** (~0.78 beat, ~2.2 blocks high, ~3.1 long). **Hold = big jump** (1.0 beat, 3.0 high, 4 long). Buffer 0.25 beat, coyote 0.15 beat.
+- Hitboxes are forgiving: player 0.7 × 1.3; small hazards ≤ 0.7 × 0.6; big ≤ 1.4 × 1.2. **High hazards** (bottom ≥ 1.7 blocks): stay on the ground.
+- Hazard behaviours, each a pure function of the beat: `static`, `drop`, `run`, `bounce`, `lob`, `fly`, `pulse`. `drop`/`lob` land `lead` beats before Rafa arrives, with a ground shadow as warning.
+- One-way platforms (static or moving) and ground holes exist in the engine. Levels 1–3 use **no holes**; platforms are optional.
+- Death → 250 ms crash → game-over card → tap anywhere retries from beat 0, no reload.
+- **Gelol** (signature): from the next whole beat, 12 beats of overdrive — clock ×1.3 (music speeds up too), small hazards are smashed, fire trail, glow. **Whey**: one-hit shield. **Pré-treino**: 8 beats of one mid-air jump, never required. **Golden dumbbell**: collectible in every level.
+- The solver (`src/sim/solver.ts`) proves each level beatable at its margin and feeds the autoplay bot (`?bot=1`). It is conservative: no buffered presses, no air jump, shield break = death.
+
+## 3. Level content
+
+Hazard kinds below are the `HazardKind` names and the art frame names (`HAZARDS[kind].art`). Sizes are hitboxes in blocks, w × h.
+
+### Level 1 — gym (art exists)
+Small: `dumbbell`, `kettlebell`, `bottle`, `rat` (scurrying toward her — the title's payoff, this level only), `plate`, `ropeWave`. Big: `treadmill`, `bench`, `plateRack`, `barbellRack`, `plyo`. High: `bag` (hanging punching bag).
+
+**Boss: Fabinho** — a boy in a black suit and red tie, from the user's sheet. He runs just ahead of Rafa, trying to out-train her. A boss is a cosmetic actor driven by chart cues; his attacks are ordinary hazards.
+
+| Attack | Hazard | Player does |
 |---|---|---|
-| **O Aranha da Carreta** — dances funk on the roof of a party train rolling ahead of Rafa; squat-dances on the beat (pose 1) between attacks | Web blob flung to the floor mid-dance (hop) · web line strung at head height (don't jump) · backflip dive off the train with his own body, wound up from pose 2 (big jump) | Tangled in his own web, he falls into the train's speaker. "Eu treino passinho, não perna!" |
-| **Fabinho** — chases from behind, then leaps ahead | Water balloons lobbed over Rafa (hop the splash) · flip-flops thrown flat, high or low · bouncing soccer ball (under the high bounce or over the low one) · final tantrum mixing all three | A window opens: "FABINHO! JÁ PRA CASA!" He is dragged off by the ear. |
-| **Rei Rato** (drawn by me) — giant swole rat, tiny crown, tiny legs | Ground-slam shockwave (hop) · weight plates thrown like frisbees, high/low · rat stampede (hop-hop-hop) · giant cheese wheel (big jump) with flame jets | Double Gelol, "A ÚLTIMA REP": he deflates into a normal rat and scurries off. Rafa's brace pops off, confetti, trophy. |
+| Throws weight plates flat | `frisbee`, `fly` high or low | Stay down / jump |
+| Leaps and lands hard | `shockwave`, `run` along the floor | Hop |
+| Bowls a medicine ball | `medBall` 0.55 × 0.55, `bounce` | Under the high bounce or over the low one |
 
-## 3. Art direction
+Between phases he taunts with push-ups and sit-ups (he's competing). Finale: Gelol, she overtakes him, he ends face-down (`defeated`), then sulking.
 
-**Your sheet sets the style and the scale.** It is detailed, soft-edged pixel art without a strict pixel grid, so sprites are used **exactly as drawn, at 1:1** — no re-pixelizing, which would wreck the faces. One block = 96 sheet pixels (the in-game Rafa is ~185 px tall, about 2 blocks); the view is 1080 px tall, which lands at 1:1 on current iPhones.
+### Level 2 — church (new art)
+Rafa hurries down the aisle on a crutch. Giovanni walks half a step behind her as a cosmetic companion: he copies her jumps a moment late, reacts when she crashes, and cannot be hit.
 
-**Rafa's animations**
+| Size | Kinds (hitbox) |
+|---|---|
+| Small | `kneeler` 0.7 × 0.4 · `flowerBasket` 0.6 × 0.5 · `hymnBooks` 0.6 × 0.4 (also `drop` from the choir loft) · `rice` 0.6 × 0.4 (`lob`: a thrown handful that lands as a little pile) · `flowerGirl` 0.6 × 0.6 and `ringBearer` 0.6 × 0.6 (children running up the aisle, `run`) |
+| Big | `pewEnd` 1.0 × 1.2 · `candleStand` 0.6 × 1.2 · `flowerStand` 0.9 × 1.2 · `photographer` 1.2 × 1.2 (crouched with a tripod, backing into the aisle) |
+| High | `dove` 0.7 × 0.4 (`fly`) · `lantern` 0.6 × 0.8 (hanging on a chain) |
 
-| State | Wheelchair (from the sheet) | Crutches and knee brace (derived) |
+No boss. The last third is a Gelol dash through the densest part of the aisle. The level ends at the **altar set piece**: steps, floral arch, the couple standing there.
+
+### Level 3 — party (new art, plus the existing spider-boss art)
+| Size | Kinds (hitbox) |
+|---|---|
+| Small | `giftBox` 0.6 × 0.55 · `chair` 0.7 × 0.5 (knocked over) · `champagne` 0.35 × 0.6 (bottle on the floor) |
+| Big | `table` 1.4 × 1.0 (round, with cloth) · `cakeTable` 1.2 × 1.2 · `champagneTower` 0.9 × 1.2 · `waiter` 0.9 × 1.2 (`run`, crossing with a tray) |
+| High | `balloons` 0.8 × 0.9 (a bunch floating at head height) |
+| Timed | `sparkler` 0.6 × 1.0 (`pulse`: a stage fountain that fires on the beat) |
+
+Optional platforms: low stage risers (`plat_stage`).
+
+**Boss: O Aranha da Carreta** — the kind of knockoff spider-hero dancer seen on a Brazilian *trenzinho da alegria*, dancing funk. Original off-model costume (red hood and torso, blue legs, lopsided white eyes, a wonky asterisk emblem, black high-top sneakers over the suit). Not Marvel's suit; no real group's name or livery. He arrives on the roof of the "CARRETA DA ALEGRIA" party train, which rolls ahead of Rafa as his stage; the music drops into a funk beat.
+
+| Attack | Hazard | Player does |
 |---|---|---|
-| Idle | Side-view frames + breathing bob | Upper body bob, dress hem sway |
-| Move | 5-frame push cycle, one push per beat; wheels spin | Crutches: plant-and-swing gait. Brace: run holding the dress, slight limp |
-| Jump | Wheelie tilt + stretch; arms-up frame at the top of a big jump | Vault off crutches / tuck |
-| Fall | Arms-up frame, tilted forward | Same pose, skirt lifted |
-| Land | Squash + dust puff | Squash + dust (crutches spark) |
-| Gelol | Pointing pose at ignition, push cycle at double speed, fire trail, glowing outline | Same treatment |
-| Death | Spins off, a wheel rolls away, HUD face goes shocked | Crutches / brace fly off |
+| Flings a web blob mid-dance | `webBlob`, `lob` | Hop |
+| Strings a web at head height | `webLine`, high `fly` | Stay down |
+| Backflips off the train, wound up from pose 2 | `spiderDive`, low `fly` | Big jump |
 
-Whole-sprite tilt, squash and stretch happen at runtime; because the art is soft-edged they stay clean. Poses borrowed from the larger rows are scaled to the in-game size at build time.
+**His two signature poses are mandatory** (they come from the user's reference photos): `aranha_pose1`, the deep one-sided squat, is his on-the-beat taunt between attacks; `aranha_pose2`, the wide low stance with one arm reaching, is the dive wind-up and appears on the level-3 game-over card beside Rafa's wheelchair. Defeat: tangled in his own web, he falls into the speaker. "Eu treino passinho, não perna!"
 
-**Art I draw** (Rei Rato, rats, hazards, power-ups, backgrounds, effects, logo, plus the spider boss if you don't supply one): authored at 32 art pixels per block and enlarged ×3, with the palette, dark outline and three-tone shading sampled from your sheets so it sits next to Rafa and Fabinho without clashing. Drawn bosses get idle, attack wind-up, attack release, jump/swing or slam, and defeated animations.
+## 4. Characters and art
 
-**Themes:** Gym — teal walls, mirrors, joke posters ("SEM DOR, SEM GELOL"), neon signs flashing on the beat. Street — sunset sky, buildings with windows lighting on the beat, pharmacy sign "TEM GELOL". Arena — dark, magenta/cyan spotlights, crowd bouncing on the beat, confetti. Three or four parallax layers each.
+**From the user's sheets** (`art-src/characters/`, read-only, used 1:1 with smooth filtering, never re-pixelized):
 
-**UI:** pixel font with Portuguese accents (Pixelify Sans, self-hosted, OFL), pixel borders, thumb-sized buttons, logo with Rafa's angry face and a crossed-out rat.
+| Sheet | Status | Gives |
+|---|---|---|
+| `rafa-sheet.png` | sliced → `public/art/rafa.*` | Wheelchair Rafa: push cycle with spinning wheels, idle, jump, arms-up, pointing, crash; 8 faces for HUD and cards; menu poses |
+| `fabinho-sheet.png` | sliced → `public/art/fabinho.*` | Run, leap, land, throw, push-ups, sit-ups, idle, defeated, sulk; faces |
+| `rafa-sheet-gym.PNG` | present (45 sprites) → `public/art/rafagym.*`, view `src/game/rafaGym.ts` | Level-1 Rafa: black gym clothes and **glasses**. Run ×5, walk ×5, jump sequence, landing, arms-up cheer, squats, push-ups, stretches, sitting hugging her knees (the level-1 ending), 6 faces with glasses for the level-1 HUD and cards |
+| `giovanni-sheet.png` | **expected** | Level-2 companion (walk, jump, arm offered, reaction, faces) |
+| `nathalia-sheet.png`, `murilo-sheet.png` | **expected** | The couple at the altar |
 
-## 4. Audio
+**Derived from Rafa's wheelchair sheet** (`public/art/kits.*`, `src/game/rafaKits.ts`): her real head and upper body with a drawn standing lower half. `crutches` is level 2's Rafa. The derived `standing` rig was level 1's stand-in and is retired once `rafaGym` is wired in.
 
-No audio files. A small WebAudio synth (kick, snare, hats, bass, lead, arp, pad) plus a step sequencer, chiptune-flavoured to match the art.
+**Stand-ins while sheets are missing:** Giovanni is simply absent; the couple at the altar are the generic drawn `bride`/`groom` (`public/art/bosses.*`). When a sheet lands, the slicer cuts it and it replaces the stand-in.
 
-- **One clock for game and music:** game beat and note times both come from the same anchor, so notes are sample-exact and obstacles stay on the beat. Pause, restart and Gelol's ×1.3 tempo re-anchor the clock.
-- Songs (pattern data, one file each): L1 bouncy electro in A minor whose **boss section drops into a Brazilian funk beat** (tamborzão-style drum pattern, original melody) for the Aranha; L2 mischievous chiptune in D minor with a cheeky lead; L3 fast hard-dance in F minor with a key lift for the final Gelol. Each has a distinct boss section.
-- Overdrive layer (16th-note arp, open filter, double-time hats) while Gelol is active.
-- Synth SFX: jump, land, collect, Gelol ignite, shield break, smash, crash, boss sting, victory jingle, UI click.
-- iOS: audio unlocks on the JOGAR click; plays through the silent switch on iOS 17+; suspends when the tab is hidden.
+**Drawn in code** (pixel art, 32 art px per block, stored 1× with `meta.scale: 3`, drawn ×3 nearest): O Aranha da Carreta and the party train (`public/art/bosses.*`), gym props, items, effects (`public/art/props.*`), backgrounds (`public/art/bg/`), logo. `spider-pos1.jpg` / `spider-pos2.jpg` are pose references of real people at a private party: never shipped, copied or committed.
 
-## 5. Screens (DOM overlay, PT-BR)
+**Art contract for code-drawn art:** palette from `art-src/palette.json`, outline `#140b09`; 16-bit arcade quality (≥ 3 tones per material, highlight, readable silhouette at phone size); sprites ~1.25–1.4× their hitbox; Phaser JSON-hash atlas with per-frame pivot/anchor (bottom-centre at ground contact for ground things, centre for flying things, items, effects). Size class must be readable from shape alone. **Backgrounds must never look jumpable:** anything near the floor line is rendered as low-contrast silhouettes in the wall's own tones, with its bottom faded out.
 
-Menu (logo, waving Rafa, JOGAR, FASES, AJUSTES) · Level select (three cards with the three Rafas, best %, boss teaser; all levels unlocked) · Settings (música, efeitos, **reduzir efeitos** for shake/flash, also honouring `prefers-reduced-motion`) · HUD (reactive Rafa portrait, level name, progress bar + %, Gelol timer, shield and pré-treino icons, dumbbell count, attempt number, pause) · Pause (Rafa on her phone) · Game over (sad/angry face, random joke, progress, best, "TOQUE PARA TENTAR DE NOVO") · Victory (arms-up Rafa, score, dumbbells, attempts, PRÓXIMA FASE) · Rotate-device screen on portrait phones (game pauses).
+**Dropped:** Rei Rato, the street and arena themes, the knee-brace Rafa. Their art is removed from the shipped game.
 
-Game-over lines include: "Pelo menos você ganhou a competição." · "LCA destruído." · "Devia ter pulado o dia de perna." · "O Gelol não cobre isso." · "A fisio mandou lembranças." · "Ratos 1 × 0 Rafa." · "Até o Fabinho pulava essa."
+## 5. Audio (no audio files)
 
-## 6. Technical architecture
+WebAudio synth + step sequencer in `src/audio/`, driven by the game's `BeatClock` so notes and obstacles share one timeline. Songs are pattern data keyed by section name.
 
-`phaser` pinned to exactly **3.90.0** (npm `latest` is now Phaser 4), Vite 8, TypeScript strict (`skipLibCheck`), vitest. Runtime dependencies: `phaser` and the font. Dev-only: `pngjs` for the art scripts, Playwright (already cached) for screenshots.
+| Song | Character |
+|---|---|
+| `gym` (120) | Bouncy bright electro; boss sections are Fabinho's bratty taunt theme |
+| `church` (132) | Up-tempo chiptune on the traditional bridal march (public domain) with organ and bells; the "boss" sections are the dash to the altar |
+| `party` (144) | Dance track that drops into Brazilian funk (tamborzão, train horn, whistle) when the Aranha arrives |
+
+Overdrive adds an intensity layer. SFX for jump, land, coin, Gelol, Whey, Pré-treino, shield break, smash, rat squeak, crash, boss enter/telegraph/beaten, win, UI.
+
+## 6. Screens (DOM overlay, `src/ui/`, built)
+
+Menu · Fases (three cards) · Ajustes (música, efeitos, reduzir efeitos, apagar progresso) · HUD (reactive Rafa portrait, progress, Gelol ring, indicators, dumbbells, attempt, pause) · Pausa · Game over (face, joke, progress, tap anywhere to retry) · Vitória · Vire o celular. Font: Jersey 15. Save: `localStorage` key `rhr.save.v1`.
+
+## 7. Architecture (as built)
 
 ```
-index.html              viewport/PWA meta, canvas + UI roots
-gallery.html            dev-only: every sprite and animation
-art-src/
-  characters/           your sheets (Rafa's moves here; Fabinho / spider boss if supplied)
-  rafa/                 frame map for the 40 sprites, derived crutches/brace parts, pose data
-  pixels/               art I draw: Rei Rato, rats, hazards, items, effects
-  backgrounds/          tiles and generators per theme
-scripts/
-  slice-sheet.mjs       sheet → 40 named sprites by transparency, drops stray specks
-  bake-art.mjs          everything → public/art/ atlases + JSON + parallax strips + UI images
-  shots.mjs             Playwright screenshots: gallery, every screen, bot runs
-src/
-  main.ts  types.ts  config.ts  save.ts
-  sim/                  PURE TypeScript, no Phaser, no DOM
-    sim.ts              integer ticks of 1/120 beat; step() returns SimEvents
-    player.ts  behaviors.ts  collide.ts
-    solver.ts           beatability sweep (tests + autoplay bot)
-  levels/               dsl.ts, level1-gym.ts, level2-street.ts, level3-arena.ts
-  game/                 createGame.ts, clock.ts, GameScene.ts, MenuScene.ts, input.ts,
-                        rafaView.ts, hazardViews.ts, parallax.ts, fx.ts, bosses/
-  audio/                engine.ts, synth.ts, sequencer.ts, sfx.ts, songs/
-  ui/                   screens, harden.ts, ui.css, strings.pt-BR.ts
+src/types.ts, config.ts      shared contract and tuning
+src/sim/                     pure deterministic sim + solver (no Phaser, no DOM)
+src/levels/                  dsl.ts + one file per level
+src/game/                    clock, createGame, GameScene, input, rafaView (wheelchair), rafaKits (standing, crutches), views
+src/art/sheets.ts            animation tables for sheet characters
+src/audio/                   engine, voices, sequencer, songs, sfx
+src/ui/, src/save.ts         screens and persistence
+scripts/slice-sheet.mjs      user sheets → atlases + DOM images
+scripts/bake-*.mjs           code-drawn art → atlases (libs: art-src/props/px.mjs, art-src/bg/lib.mjs, art-src/bosses/raster.mjs)
+scripts/shots*.mjs           Playwright screenshot runs (bot, UI, gallery)
 ```
 
-- **Simulation is separate from rendering.** `GameScene` reads the beat from `clock.ts`, steps the sim in whole ticks, and draws. Phaser's own smoothed frame delta is not used (it would drift against the audio).
-- **Phaser setup:** `Scale.NONE` with a manual `ResizeObserver` (the built-in resize mode renders blurry on retina); zoom snaps to exactly 1 when the screen is within ~12% of 1080 px tall; your sprites use smooth filtering, my ×3 art uses nearest; Phaser audio and input disabled (own WebAudio and pointer handling).
-- **Solver = the test that matters.** A forward sweep over press/release decisions proves each level can be finished with hazards widened by that level's timing margin. An unbeatable or unfair chart fails `npm test`.
-- **Autoplay bot** (`?bot=1`) replays the solver's inputs inside the real game. Other dev flags: `?level=2`, `?t=96` (start beat), `?debug=1` (hitboxes).
-- **Mobile hardening:** `viewport-fit=cover`, no user scaling, `touch-action: none`, no overscroll/callout/selection, `100dvh`, safe-area insets, jump listeners on the game area (any finger) so HUD buttons don't jump, PWA manifest for fullscreen landscape from the home screen.
-- **Desktop:** Space / ↑ / click to jump, P or Esc to pause, R to retry.
+Background themes are described in `public/art/bg/manifest.json` under `themes.gym`, `themes.church`, `themes.party` (layers back-to-front with size, y, parallax, tiling; ground tiles; beat overlays; set-piece sprites), all in art px, drawn ×3. Its `_doc` array holds the assembly rules.
 
-## 7. Build order (all code by Opus agents)
+Code-drawn atlases: `props.*` (object hazards, items, platforms, effects — all levels), `bosses.*` (O Aranha, the train, rats, and the people who are hazards: photographer, children, waiter, plus the stand-in couple).
 
-Agents own disjoint folders so parallel work never touches the same file. A local `git init` with one checkpoint commit per milestone (no remote, nothing pushed). Your sheet is moved to `art-src/characters/rafa-sheet.png`, unmodified.
-
-| Milestone | Agents | Output |
-|---|---|---|
-| **M0 Foundation** | 1 | Scaffold, `types.ts`, `config.ts`, full `sim/` + solver + tests, clock, `slice-sheet.mjs`, `GameScene` with **wheelchair Rafa's push cycle already in**, grey-box hazards, input, draft level 1. A playable run on your phone. |
-| **M1 Content** (parallel) | 4 | **Rafa** (all wheelchair animations, derived crutches and knee-brace versions, HUD faces, UI poses, gallery) · **World art** (bosses, rats, hazards, items, backgrounds, effects, logo) · **Audio** (engine, three songs, SFX, offline-render check) · **UI shell** (all screens, save, mobile hardening, manifest) |
-| **M2 Level 1 complete** | 1 | Real art everywhere, effects, power-ups, boss actor framework, spider boss, final level-1 chart synced to its song |
-| **M3 Levels 2 and 3** (parallel) | 2 | Each: chart, boss actor, level-specific hazards, song sync |
-| **M4 Polish** | 1 | Performance pass, juice (shake, particles, beat pulses), fixes from review, production build |
-
-After each milestone Fable reviews screenshots and bot runs and sends fix notes before the next one starts. You see the gallery after M1 (the derived Rafas and my bosses) before levels 2 and 3 are built. Final pass with `/ponytail-review`.
+Dev flags: `?bot=1`, `?level=N`, `?t=<beat>`, `?debug=1`. Dev server for the user's phone runs on port 5190.
 
 ## 8. Verification
 
-1. `npm test` — sim unit tests, plus the solver finishing all three levels at their timing margins.
-2. `npm run build` — strict TypeScript and production bundle succeed.
-3. `node scripts/shots.mjs` — headless Chromium at iPhone landscape size (844×390 @3x): gallery sheet with every animation, every UI screen, and the bot reaching 100% on each level with screenshots at 10 points. Fable reads the PNGs.
-4. Audio: offline render of 16 bars per song checks for silence and clipping, and writes WAVs you can listen to.
-5. On your iPhone, first after M0 and again at the end: `npm run dev -- --host`, open the LAN address. Check: sound starts after JOGAR, rotate screen appears in portrait, no page scroll/zoom/long-press menu, notch doesn't cover the HUD, smooth at 60 fps, retry is instant, jumps feel on the beat (also with Bluetooth audio off).
+`npm test` (sim + solver on every level) · `npm run build` · `npm run shots` (bot reaches 100% on each level) · `npm run shots:ui` · `npm run audio:check` · real-iPhone check for sound unlock, sync, scroll/zoom, safe areas.
 
-## Risks
+## 9. Engineering rules
 
-- **The two derived Rafas are the hardest art in the project.** Her upper body is from your sheet; the standing lower half, crutches and brace are new and must match a detailed style. If the gallery after M1 doesn't convince you, a second sheet in the same style (standing, crutches, brace) drops straight into the slicer.
-- **My art vs. your sheet:** code-drawn pixel art is flatter than the sheet's shading. Shared palette and outline keep it coherent, but Rafa will be the most detailed thing on screen.
-- **Music/gameplay sync and iOS-only behaviour can't be tested here** — only on your phone, hence the check right after M0.
-
-## Not included
-
-Hosting/public URL (local only, per your answer) · English text · level locking · practice mode/checkpoints · level editor · leaderboards.
-
----
-
-## 9. As built after M0 (supersedes anything above that conflicts)
-
-- **Contract:** `src/types.ts` and `src/config.ts` are the source of truth for level/chart/hazard/sim types, hazard hitboxes (`HAZARDS`) and view constants (`VIEW`). Read them before coding.
-- **Physics:** big jump = 1.0 beat, 3.0 blocks apex, 4 blocks long. Hop = ~0.78 beat, **~2.2 blocks apex**, ~3.1 blocks long (min hold 0.2 beat so every natural tap gives the same hop).
-- **`drop` and `lob` hazards land `lead` beats (default 1) before Rafa reaches them**; the rule "every chart event is met on its beat" holds for all kinds.
-- **Solver** is conservative: no buffered presses, no Pré-treino air jump, a shield break counts as death. It can miss a win but never invents one.
-- **Rafa sheet facts:** there is no loose wheel (the "parts" are an empty chair in three views plus two tiny bits); wheel spokes are drawn identically in all five push frames, so spinning needs an overlay or baked rotation; `side_1`/`side_2` are the usable idle.
-- **Atlas format:** Phaser JSON-hash atlas with per-frame `pivot` (see `public/art/rafa.json`).
-
-## 10. Art contract for everything drawn in code
-
-- **Density:** 32 art px per block, stored in atlases at **1×** with `"meta": { "scale": 3 }`; the renderer draws them at ×3 with nearest filtering. (Sheet characters are stored 1:1 with smooth filtering.)
-- **Palette:** `art-src/palette.json` only. Outline `#140b09`.
-- **Look:** 16-bit arcade sprites, not flat shapes: dark outline, at least three tones per material, a highlight, sparing dithering, readable silhouette at phone size. Check every sprite next to Rafa's `push_0` at game scale before calling it done.
-- **Frames:** named after `HAZARDS[kind].art` for hazards; pivot at the ground-contact bottom centre unless stated. Sprites are drawn ~1.25–1.4× their hitbox.
-- **DOM images** (menus, cards) live in `public/art/ui/<name>.png`, already enlarged, one file per image.
-
-## 11. File ownership during M1 (parallel work)
-
-`package.json` is frozen (scripts are pre-added); only the UI lane may add the font dependency. Nobody commits. Each lane edits only its own paths:
-
-| Lane | Owns |
-|---|---|
-| Sheets (Rafa wheelchair + Fabinho) | `scripts/slice-sheet.mjs`, `art-src/rafa/`, `art-src/fabinho/`, `public/art/rafa.*`, `public/art/fabinho.*`, `public/art/ui/rafa_*`, `public/art/ui/fabinho_*`, `src/game/rafaView.ts`, `src/art/sheets.ts`, `gallery.html`, `src/gallery.ts`, `scripts/shots-gallery.mjs` |
-| Derived Rafas (crutches, brace) | `scripts/bake-kits.mjs`, `art-src/kits/`, `public/art/kits.*`, `public/art/ui/rafakit_*`, `src/game/rafaKits.ts`, `kits.html`, `src/kitsPreview.ts` |
-| Drawn bosses | `scripts/bake-bosses.mjs`, `art-src/bosses/`, `public/art/bosses.*`, `public/art/ui/aranha_*`, `public/art/ui/reirato_*` |
-| Props (hazards, items, effects) | `scripts/bake-props.mjs`, `art-src/props/`, `public/art/props.*` |
-| Backgrounds, ground, logo | `scripts/bake-bg.mjs`, `art-src/bg/`, `public/art/bg/`, `public/art/logo.png` |
-| Audio | `src/audio/`, `audio.html`, `scripts/audio-check.mjs` |
-| UI | `index.html`, `src/main.ts`, `src/ui/`, `src/save.ts`, `public/manifest.webmanifest`, `public/icons/`, `scripts/shots-ui.mjs`, `scripts/shots.mjs` |
+Smallest code that fully solves the task; no speculative abstraction; reuse what exists; comment only the why; a test for risky logic. Never cut validation at boundaries, accessibility, or mobile behaviour. Engineers work in parallel on disjoint paths given in their brief, never commit, never kill processes they didn't start, and only fix type errors in their own files.

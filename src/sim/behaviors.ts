@@ -15,6 +15,15 @@ export function landBeat(h: HazardEvent): number {
   return h.b === 'drop' || h.b === 'lob' ? h.beat - (h.lead ?? 1) : h.beat;
 }
 
+/** Beat at which a hazard is `ahead` blocks in front of Rafa, i.e. leaves a boss standing there: thrown (lob),
+ *  released (drop) or passing that point (run/bounce/fly). Static/pulse hazards have no release (NaN). */
+export function releaseBeat(h: HazardEvent, bpb: number, ahead: number): number {
+  if (h.b === 'lob') return landBeat(h) - (h.flight ?? 1);
+  if (h.b === 'drop') return landBeat(h) - DROP_FALL_BEATS;
+  if (h.b === 'run' || h.b === 'bounce' || h.b === 'fly') return h.beat - ahead / (bpb + h.speed);
+  return NaN;
+}
+
 /** Horizontal speed toward Rafa, blocks/beat. */
 export function hazardSpeed(h: HazardEvent): number {
   return h.b === 'run' || h.b === 'bounce' || h.b === 'fly' ? h.speed : 0;

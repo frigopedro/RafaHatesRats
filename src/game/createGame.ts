@@ -1,6 +1,8 @@
 // Phaser setup: Scale.NONE with our own ResizeObserver. The backbuffer is the CSS size × DPR (capped) and zoom 1/dpr
 // shows it at CSS size, so the canvas is never stretched (Phaser's own resize modes render blurry on retina).
 // Phaser audio and input are off: audio is our own WebAudio, input is src/game/input.ts.
+// The returned game's destroy() also disconnects the observer and frees the WebGL context (Phaser doesn't; iOS caps
+// live contexts), so callers can simply destroy it.
 import Phaser from 'phaser';
 import { VIEW } from '../config';
 import type { GameScene } from './GameScene';
@@ -25,10 +27,19 @@ export function createGame(parent: HTMLElement, scene: GameScene): Phaser.Game {
     render: { antialias: true, powerPreference: 'high-performance' },
     scene,
   });
-  new ResizeObserver(() => {
+  const ro = new ResizeObserver(() => {
+    if (!game.isRunning) return;
     const [w, h] = size();
     game.scale.setZoom(1 / dpr());
     game.scale.resize(w, h);
-  }).observe(parent);
+  });
+  ro.observe(parent);
+  const destroy = game.destroy.bind(game);
+  game.destroy = (removeCanvas = true, noReturn = false) => {
+    ro.disconnect();
+    const gl = (game.renderer as { gl?: WebGLRenderingContext } | null)?.gl;
+    game.events.once(Phaser.Core.Events.DESTROY, () => setTimeout(() => gl?.getExtension('WEBGL_lose_context')?.loseContext()));
+    destroy(removeCanvas, noReturn);
+  };
   return game;
 }

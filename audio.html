@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>RafaHatesRats — audio</title>
+  <style>
+    :root { color-scheme: dark; }
+    body { margin: 0; padding: 16px; background: #161219; color: #eee; font: 15px system-ui, sans-serif; }
+    h1 { font-size: 18px; margin: 0 0 12px; }
+    .row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 12px; }
+    button, select { font: inherit; padding: 10px 14px; border-radius: 8px; border: 1px solid #554a5e; background: #2a2230; color: #eee; }
+    button:active { background: #4a3a55; }
+    #metro { width: 120px; height: 120px; border-radius: 16px; border: 2px solid #554a5e; margin: 8px 0; }
+    #info { font-variant-numeric: tabular-nums; min-height: 1.4em; }
+    #sfx button { padding: 8px 10px; }
+    label { display: flex; gap: 6px; align-items: center; }
+  </style>
+</head>
+<body>
+  <h1>Áudio — dev</h1>
+  <div class="row">
+    <button id="unlock">Unlock</button>
+    <select id="song"></select>
+    <select id="section"></select>
+    <button id="play">▶ Play</button>
+    <button id="stop">■ Stop</button>
+    <button id="pause">❚❚ Pause</button>
+    <button id="od">Gelol (12 beats)</button>
+  </div>
+  <div class="row">
+    <label>música <input id="music" type="range" min="0" max="1" step="0.01" value="0.8" /></label>
+    <label>efeitos <input id="effects" type="range" min="0" max="1" step="0.01" value="0.9" /></label>
+  </div>
+  <div id="metro"></div>
+  <div id="info"></div>
+  <h1>SFX</h1>
+  <div id="sfx" class="row"></div>
+  <script type="module" src="/src/audio/dev.ts"></script>
+</body>
+</html>

@@ -1,5 +1,6 @@
 // Small helpers so a chart reads like a beat sheet. Every `beat` is when Rafa meets the thing.
-import { ITEM_SIZE, PLAYER, TICKS_PER_BEAT as TPB } from '../config';
+import { BOSS_AHEAD, ITEM_SIZE, PLAYER, TICKS_PER_BEAT as TPB } from '../config';
+import { releaseBeat } from '../sim/behaviors';
 import { jumpCurve } from '../sim/sim';
 import type { ChartEvent, HazardEvent, HazardKind, HazardMotion, ItemEvent, ItemKind, PlatformEvent } from '../types';
 
@@ -20,11 +21,13 @@ export const bossExit = (beat: number): ChartEvent => ({ t: 'cue', beat, cue: 'b
 export const rep = (from: number, every: number, n: number, f: (beat: number, i: number) => ChartEvent | ChartEvent[]) =>
   Array.from({ length: n }, (_, i) => f(from + i * every, i)).flat();
 
-/** Boss attack: the hazard plus a telegraph cue `warn` beats before it lands (or before Rafa meets it). */
-export const attack = (h: HazardEvent, name: string, warn = 1.5): ChartEvent[] => {
-  const land = h.b === 'lob' ? h.beat - (h.lead ?? 1) - (h.flight ?? 1) : h.beat;
-  return [{ t: 'cue', beat: land - warn, cue: 'bossAttack', attack: name }, h];
-};
+/** Boss attack: the hazard plus its telegraph cue `warn` beats before the boss releases it (see releaseBeat).
+ *  The boss view pairs the cue with the first hazard of the attack's kind released at or after the cue. */
+export const attack = (h: HazardEvent, name: string, warn = 1, bpb = 4): ChartEvent[] =>
+  [{ t: 'cue', beat: releaseBeat(h, bpb, BOSS_AHEAD) - warn, cue: 'bossAttack', attack: name }, h];
+
+/** A boss move with no hazard (e.g. a taunt between phases). */
+export const bossMove = (beat: number, name: string): ChartEvent => ({ t: 'cue', beat, cue: 'bossAttack', attack: name });
 
 /** `n` golden dumbbells on the exact arc of a jump pressed at `pressBeat` and held `holdBeats` (0 = tap),
  *  centred on Rafa's body so following the arc collects them all. */

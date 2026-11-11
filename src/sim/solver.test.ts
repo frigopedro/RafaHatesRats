@@ -3,7 +3,7 @@ import type { ChartEvent, LevelDef } from '../types';
 import { replay, solve } from './solver';
 
 const level = (chart: ChartEvent[]): LevelDef => ({
-  id: 98, name: 't', theme: 'gym', rafa: 'wheelchair', bpm: 120, blocksPerBeat: 4, lengthBeats: 16,
+  id: 't', name: 't', theme: 'gym', rafa: 'standing', bpm: 120, blocksPerBeat: 4, lengthBeats: 16,
   songId: '', marginMs: 60, sections: [], ground: [[-4, 20]], chart,
 });
 

@@ -259,7 +259,7 @@ export function step(L: Level, s: SimState, inp: InputFrame): SimEvent[] {
  *  `holdTicks` = how long the button stays down (0 = tap). Used by the chart DSL to put coins on real arcs. */
 export function jumpCurve(holdTicks: number): number[] {
   const L = compileLevel({
-    id: 0, name: '', theme: 'gym', rafa: 'wheelchair', bpm: 120, blocksPerBeat: 1, lengthBeats: 1e6,
+    id: '', name: '', theme: 'gym', rafa: 'standing', bpm: 120, blocksPerBeat: 1, lengthBeats: 1e6,
     songId: '', marginMs: 0, sections: [], ground: [[-1e6, 1e6]], chart: [],
   });
   const s = createState(L);

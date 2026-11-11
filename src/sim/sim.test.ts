@@ -5,7 +5,7 @@ import { hazardPos, type Pos } from './behaviors';
 import { compileLevel, createState, jumpCurve, step } from './sim';
 
 const level = (chart: ChartEvent[], ground: [number, number][] = [[-10, 100]]): LevelDef => ({
-  id: 99, name: 't', theme: 'gym', rafa: 'wheelchair', bpm: 120, blocksPerBeat: 4, lengthBeats: 40,
+  id: 't', name: 't', theme: 'gym', rafa: 'standing', bpm: 120, blocksPerBeat: 4, lengthBeats: 40,
   songId: '', marginMs: 0, sections: [], ground, chart,
 });
 
@@ -115,7 +115,7 @@ describe('hazard behaviours are pure functions of the beat', () => {
     expect(pos(h, 12.2).on).toBe(true);
   });
   it('a pulse hazard only kills while on', () => {
-    const flame = (phase: number): ChartEvent => ({ t: 'hazard', beat: 4, kind: 'flame', b: 'pulse', period: 2, on: 1, phase });
+    const flame = (phase: number): ChartEvent => ({ t: 'hazard', beat: 4, kind: 'sparkler', b: 'pulse', period: 2, on: 1, phase });
     expect(run(level([flame(0)]), [], 6).s.dead).toBe(true);
     expect(run(level([flame(0.5)]), [], 6).s.dead).toBe(false); // off during [3.5, 4.5)
   });

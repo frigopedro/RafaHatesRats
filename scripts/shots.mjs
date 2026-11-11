@@ -15,13 +15,14 @@ const base = server.resolvedUrls.local[0];
 const browser = await chromium.launch();
 const errors = [];
 
-async function open(query, viewport = { width: 844, height: 390 }) {
+// Landscape pages wait for `waitState`: ?bot=1 / ?level= start straight into 'run', a plain URL opens the 'menu'.
+async function open(query, waitState, viewport = { width: 844, height: 390 }) {
   const ctx = await browser.newContext({ viewport, deviceScaleFactor: 3, isMobile: true, hasTouch: true });
   const page = await ctx.newPage();
   page.on('pageerror', (e) => errors.push(String(e)));
   page.on('console', (m) => m.type() === 'error' && errors.push(m.text()));
   await page.goto(base + query);
-  if (viewport.width > viewport.height) await page.waitForSelector('body[data-state="ready"]', { timeout: 30000 });
+  if (waitState) await page.waitForSelector(`body[data-state="${waitState}"]`, { timeout: 30000 });
   return page;
 }
 const state = (page) => page.evaluate(() => document.body.dataset.state);
@@ -30,9 +31,8 @@ const shot = (page, name) => page.screenshot({ path: `${OUT}/${name}.png` });
 
 try {
   // 1. Bot run of level 1, start to finish.
-  const page = await open('?bot=1');
+  const page = await open('?bot=1', 'run');
   await shot(page, '00-start');
-  await page.locator('.overlay').dispatchEvent('pointerdown');
   let next = 0;
   const t0 = Date.now();
   for (;;) {
@@ -49,19 +49,18 @@ try {
   if (end !== 'won') throw new Error('bot did not finish level 1');
 
   // 2. Death: no input, Rafa rolls into the first hazard.
-  const dead = await open('');
-  await dead.locator('.overlay').dispatchEvent('pointerdown');
+  const dead = await open('', 'menu');
+  await dead.getByRole('button', { name: 'JOGAR' }).click();
   await dead.waitForSelector('body[data-state="over"]', { timeout: 20000 });
   await shot(dead, 'death');
 
   // 3. Hitbox overlay around the first big jumps.
-  const dbg = await open('?bot=1&debug=1&t=30');
-  await dbg.locator('.overlay').dispatchEvent('pointerdown');
+  const dbg = await open('?bot=1&debug=1&t=30', 'run');
   await dbg.waitForTimeout(1100);
   await shot(dbg, 'debug');
 
   // 4. Portrait phone: the rotate overlay.
-  const tall = await open('', { width: 390, height: 844 });
+  const tall = await open('', null, { width: 390, height: 844 });
   await tall.getByText('Vire o celular').waitFor({ timeout: 20000 });
   await shot(tall, 'portrait');
 } finally {
