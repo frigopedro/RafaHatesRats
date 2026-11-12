@@ -221,6 +221,7 @@ export function createAudio(): Audio {
           if (e.kind === 'rat') sfx.squeak(fx, t + 0.03);
           break;
         case 'shieldBreak':
+        case 'hurt':
           sfx.shieldBreak(fx, t);
           if (e.kind === 'rat') sfx.squeak(fx, t + 0.03);
           break;

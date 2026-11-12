@@ -2,7 +2,7 @@ import '@fontsource/jersey-15/latin-400.css';
 import './ui/ui.css';
 import type Phaser from 'phaser';
 import { createAudio } from './audio';
-import { OVERDRIVE, TICKS_PER_BEAT as TPB } from './config';
+import { EASY_HEARTS, OVERDRIVE, TICKS_PER_BEAT as TPB } from './config';
 import { BeatClock } from './game/clock';
 import { createGame } from './game/createGame';
 import { GameScene } from './game/GameScene';
@@ -14,11 +14,13 @@ import type { GameControl, LevelDef, SimEvent } from './types';
 import * as ui from './ui/screens';
 import { fullscreen, harden } from './ui/shell';
 
-// Dev flags: ?level=<id or 1-based index> ?t=<start beat> ?bot=1 (autoplay the solver trace) ?debug=1 (hitboxes). With ?bot or ?level
+// Dev flags: ?level=<id or 1-based index> ?t=<start beat> ?bot=1 (autoplay the solver trace, always Difícil) ?debug=1 (hitboxes)
+// ?hard=1 (Difícil for this page load, not saved). With ?bot or ?level
 // the menu is skipped. Dev server only: ?screen=menu|fases|ajustes|pause|hud|over|victory (&cause=<hazard>
 // &delay=1 &od=<beats> &pre=<beats>), ?notch=1.
 const q = new URLSearchParams(location.search);
 const qBeat = Number(q.get('t') ?? 0);
+const hardMode = () => q.get('bot') === '1' || q.get('hard') === '1' || !!getSettings().hard;
 
 type State = 'loading' | 'menu' | 'fases' | 'ajustes' | 'run' | 'paused' | 'over' | 'won';
 let state: State = 'loading';
@@ -48,14 +50,13 @@ let host: HTMLElement | null = null;
 let gen = 0; // hooks from a game being torn down are ignored
 let whenReady: (() => void) | null = null;
 let clock: BeatClock | null = null;
-let startBeat = 0;
 let attempt = 0; // this session, this level
 let winTimer = 0; // the victory card waits a moment so the finish is seen in the game
 
 // One input for every game: its listeners live on #game and window for the page's lifetime.
 const input = createInput(gameEl, {
   pause: () => (state === 'run' ? pause(true) : state === 'paused' ? pause(false) : (state === 'fases' || state === 'ajustes') && menu()),
-  retry: () => ['run', 'paused', 'over', 'won'].includes(state) && play(),
+  retry: () => ['run', 'paused', 'over', 'won'].includes(state) && play(state === 'over'),
 });
 
 /** Makes `d` the loaded level, then calls `then`. GameScene takes its level in the constructor, so switching levels
@@ -74,7 +75,7 @@ function load(d: LevelDef, then: () => void) {
   whenReady = then;
   attempt = 0;
   const g = ++gen;
-  startBeat = qBeat > 0 && qBeat < d.lengthBeats ? qBeat : 0;
+  const startBeat = qBeat > 0 && qBeat < d.lengthBeats ? qBeat : 0;
   clock = new BeatClock(d.bpm);
   let bot: TraceInput[] | null = null;
   if (q.get('bot') === '1') {
@@ -115,17 +116,19 @@ function startLevel(d: LevelDef) {
   load(d, play);
 }
 
-function play() {
+/** `fromCheckpoint`: easy mode's game-over retry (from the start when no checkpoint was passed). */
+function play(fromCheckpoint = false) {
   if (!control || !def) return;
   attempt++;
   levelSave(def.id).attempts++;
   persist();
   clearTimeout(winTimer);
   ui.hide();
-  ui.hud.reset(def, attempt);
-  control.start();
+  const hearts = hardMode() ? 1 : EASY_HEARTS;
+  control.start(hearts, fromCheckpoint);
+  ui.hud.reset(def, attempt, hearts > 1 ? hearts : 0, control.coins);
   void audio.unlock(); // no-op unless this run was started by a real gesture; the module also self-unlocks
-  safe(() => audio.startLevel(def!, clock!, startBeat));
+  safe(() => audio.startLevel(def!, clock!, control!.startBeat));
   setState('run');
   if (portrait.matches) pause(true); // loaded while the phone was upright
 }
@@ -134,7 +137,7 @@ function pause(on: boolean) {
   if (on && state === 'run' && control?.running) {
     control.setPaused(true);
     setState('paused');
-    ui.pause(def!, { continuar: () => pause(false), reiniciar: play, menu });
+    ui.pause(def!, { continuar: () => pause(false), reiniciar: () => play(), menu });
   } else if (!on && state === 'paused') {
     ui.hide();
     control!.setPaused(false);
@@ -184,16 +187,18 @@ function gameOver(death: Extract<SimEvent, { type: 'death' }>, progress: number)
   }
   console.info(`death at beat ${(death.tick / TPB).toFixed(2)}: ${death.cause}`);
   setState('over');
-  ui.gameOver({ def: def!, cause: death.cause, pct, best: s.best, record: pct > prev && prev > 0 }, { retry: play, menu });
+  const cp = control!.checkpoint;
+  ui.gameOver({ def: def!, cause: death.cause, pct, best: s.best, record: pct > prev && prev > 0, checkpoint: cp === null ? null : Math.floor((cp / def!.lengthBeats) * 100) },
+    { retry: () => play(true), restart: () => play(), menu });
 }
 
 /** Saves the win now; the card follows `delayMs` later, or at once on a tap or key. */
 function win(run: { coins: number; smashed: number }, delayMs = 1200) {
   const d = def!, s = levelSave(d.id), card = ui.cardOf(d);
-  const firstClear = !s.done, coinRecord = s.done && run.coins > s.coins;
-  const info = { def: d, card, coins: run.coins, total: ui.coinTotal(d), smashed: run.smashed, attempts: attempt, firstClear, coinRecord,
+  const firstClear = !s.done, coinRecord = s.done && run.coins > s.coins, hard = hardMode();
+  const info = { def: d, card, hard, coins: run.coins, total: ui.coinTotal(d), smashed: run.smashed, attempts: attempt, firstClear, coinRecord,
     next: LEVELS[LEVELS.indexOf(d) + 1] ?? null, last: card === ui.CARDS[ui.CARDS.length - 1] }; // last = the story's end
-  Object.assign(s, { best: 100, done: true, coins: Math.max(s.coins, run.coins) });
+  Object.assign(s, { best: 100, done: true, coins: Math.max(s.coins, run.coins) }, hard && { hard: true });
   persist();
   setState('won');
   const show = (e?: Event) => {
@@ -204,7 +209,7 @@ function win(run: { coins: number; smashed: number }, delayMs = 1200) {
     e?.preventDefault(); // this tap/key only reveals the card; it must not also press a button on it
     e?.stopPropagation();
     ui.hud.show(false);
-    ui.victory(info, { next: () => info.next && startLevel(info.next), repetir: play, menu });
+    ui.victory(info, { next: () => info.next && startLevel(info.next), repetir: () => play(), menu });
   };
   if (!delayMs) return show();
   winTimer = window.setTimeout(show, delayMs);

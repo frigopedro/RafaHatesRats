@@ -1,7 +1,7 @@
 // Deterministic rhythm-runner simulation. Pure TS: no Phaser, no DOM, no randomness.
 // One step = one tick = 1/120 beat. Rafa's x is always beat × blocksPerBeat, so only y is simulated.
 import {
-  HAZARDS, ITEM_SIZE, OVERDRIVE, PHYS, PLAYER, PRE_TICKS, SHIELD_INVULN_TICKS, TICKS_PER_BEAT as TPB,
+  HAZARDS, HURT_INVULN_TICKS, ITEM_SIZE, OVERDRIVE, PHYS, PLAYER, PRE_TICKS, SHIELD_INVULN_TICKS, TICKS_PER_BEAT as TPB,
 } from '../config';
 import type { CueEvent, InputFrame, Level, LevelDef, SimEvent, SimState } from '../types';
 import { hazardPos, hazardSpeed, platformOffset, type Pos } from './behaviors';
@@ -57,20 +57,26 @@ export function compileLevel(def: LevelDef, marginMs = 0): Level {
   return {
     def, hazards, items, platforms, cues, marginMs, halfW, reach,
     maxReach: Math.max(0, ...reach),
+    checkpoints: checkpoints(def),
     minHold: [minHoldTicks(def.bpm, 1), minHoldTicks(def.bpm, OVERDRIVE.rate)],
     ground: def.ground.map(([a, b]) => [a * bpb, b * bpb] as [number, number]).sort((p, q) => p[0] - q[0]),
     endTick: Math.round(def.lengthBeats * TPB),
   };
 }
 
-export function createState(L: Level, startBeat = 0): SimState {
+/** Easy-mode checkpoints: every section start after the first, unless the section says `checkpoint: false`. */
+export const checkpoints = (def: LevelDef): number[] =>
+  def.sections.filter((s) => s.beat > 0 && s.checkpoint !== false).map((s) => s.beat);
+
+/** `hearts` = hits she can take (1 = today's one-hit game, which the solver proves). */
+export function createState(L: Level, startBeat = 0, hearts = 1): SimState {
   const tick = Math.round(startBeat * TPB);
   let cueIdx = 0;
   while (cueIdx < L.cues.length && Math.round(L.cues[cueIdx].beat * TPB) < tick) cueIdx++;
   return {
     tick, y: 0, prevY: 0, vy: 0, support: overGround(L, (tick / TPB) * L.def.blocksPerBeat) ? 0 : -1,
     held: false, jumpTicks: 0, cutDone: true, coyote: 0, buffer: 0, airJump: true,
-    shield: false, invulnUntil: 0, preUntil: 0, overdriveFrom: 0, overdriveUntil: 0, coins: 0, cueIdx,
+    shield: false, hearts, maxHearts: hearts, invulnUntil: 0, preUntil: 0, overdriveFrom: 0, overdriveUntil: 0, coins: 0, cueIdx,
     dead: false, won: false,
     taken: new Uint8Array(L.items.length), smashed: new Uint8Array(L.hazards.length),
   };
@@ -217,6 +223,10 @@ export function step(L: Level, s: SimState, inp: InputFrame): SimEvent[] {
       s.shield = false;
       s.invulnUntil = t + SHIELD_INVULN_TICKS;
       EV.push({ type: 'shieldBreak', tick: t, hazard: i, kind: h.kind });
+    } else if (s.hearts > 1) {
+      s.hearts--;
+      s.invulnUntil = t + HURT_INVULN_TICKS;
+      EV.push({ type: 'hurt', tick: t, hazard: i, kind: h.kind });
     } else {
       s.dead = true;
       EV.push({ type: 'death', tick: t, cause: h.kind, hazard: i });
@@ -247,7 +257,9 @@ export function step(L: Level, s: SimState, inp: InputFrame): SimEvent[] {
   }
 
   while (s.cueIdx < L.cues.length && Math.round(L.cues[s.cueIdx].beat * TPB) <= t) {
-    EV.push({ type: 'cue', tick: t, cue: L.cues[s.cueIdx++] });
+    const cue = L.cues[s.cueIdx++];
+    if (cue.cue === 'section' && L.checkpoints.includes(cue.beat)) s.hearts = s.maxHearts;
+    EV.push({ type: 'cue', tick: t, cue });
   }
   if (t >= L.endTick) {
     s.won = true;

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { OVERDRIVE, PHYS, TICKS_PER_BEAT as TPB } from '../config';
+import { HURT_INVULN_TICKS, OVERDRIVE, PHYS, TICKS_PER_BEAT as TPB } from '../config';
 import type { ChartEvent, HazardEvent, LevelDef, SimEvent, SimState } from '../types';
 import { hazardPos, type Pos } from './behaviors';
 import { compileLevel, createState, jumpCurve, minHoldTicks, step } from './sim';
@@ -190,6 +190,38 @@ describe('collisions and items', () => {
   it('coins are counted and each is taken once', () => {
     const coins: ChartEvent[] = [2, 2.1, 3].map((beat) => ({ t: 'item', beat, kind: 'coin', y: 0.3 }));
     expect(run(level(coins), [], 5).s.coins).toBe(3);
+  });
+});
+
+describe('hearts (easy mode)', () => {
+  const bottle = (beat: number): ChartEvent => ({ t: 'hazard', beat, kind: 'bottle', b: 'static' });
+  /** No input, `hearts` hearts, until death or `untilBeat`. */
+  function walk(def: LevelDef, hearts: number, untilBeat: number) {
+    const L = compileLevel(def);
+    const s = createState(L, 0, hearts);
+    const events: SimEvent[] = [];
+    while (s.tick < untilBeat * TPB && !s.dead) events.push(...step(L, s, { pressed: false, released: false, held: false }));
+    return { s, events, types: events.filter((e) => e.type !== 'cue').map((e) => e.type) };
+  }
+  it('a hit costs a heart and 2 beats of invulnerability; the hit after the last heart kills', () => {
+    const { s, events, types } = walk(level([bottle(4), bottle(5), bottle(8), bottle(12)]), 3, 20); // 5 is inside the invulnerable beats
+    expect(types).toEqual(['hurt', 'hurt', 'death']);
+    expect(events.filter((e) => e.type === 'hurt').map((e) => e.tick / TPB)).toEqual([expect.closeTo(3.9, 1), expect.closeTo(7.9, 1)]);
+    expect(events.at(-1)).toMatchObject({ type: 'death', cause: 'bottle' });
+    expect(s.tick / TPB).toBeGreaterThan(11.8);
+    expect(HURT_INVULN_TICKS).toBe(2 * TPB);
+  });
+  it('one heart is the one-hit game; Whey still absorbs first', () => {
+    expect(walk(level([bottle(4)]), 1, 8).types).toEqual(['death']);
+    expect(walk(level([{ t: 'item', beat: 2, kind: 'whey', y: 0 }, bottle(4), bottle(6)]), 2, 10).types).toEqual(['pickup', 'shieldBreak', 'hurt']);
+  });
+  it('hearts refill at a checkpoint, not at a section flagged checkpoint: false', () => {
+    const sections = [{ beat: 0, name: 'intro' }, { beat: 6, name: 'warmup' }, { beat: 10, name: 'main', checkpoint: false as const }];
+    const def = { ...level([bottle(4), bottle(8), bottle(12), bottle(14)]), sections };
+    const { s, types } = walk(def, 2, 20);
+    expect(types).toEqual(['hurt', 'hurt', 'death']); // 4 hurts, refill at 6, 8 hurts, no refill at 10, 12 kills
+    expect(s.tick / TPB).toBeLessThan(12.5);
+    expect(s.hearts).toBe(1);
   });
 });
 

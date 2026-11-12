@@ -1,5 +1,6 @@
 // Every UI screen at iPhone landscape sizes (844×390 @3x and SE 667×375 @2x), a notch variant, and the rotate prompt
-// in portrait. Uses the dev-only ?screen= hook in src/main.ts. Output: shots/ui/ (git-ignored).
+// in portrait. Uses the dev-only ?screen= hook in src/main.ts, on the dev server at :5190 when it is running (else its
+// own). Output: shots/ui/ (git-ignored).
 import fs from 'node:fs';
 import { chromium } from 'playwright';
 import { createServer } from 'vite';
@@ -7,9 +8,11 @@ import { createServer } from 'vite';
 const OUT = 'shots/ui';
 fs.rmSync(OUT, { recursive: true, force: true });
 fs.mkdirSync(OUT, { recursive: true });
-const server = await createServer({ server: { port: 5185, strictPort: true, hmr: false, watch: null }, logLevel: 'warn' }); // no reloads mid-run
-await server.listen();
-const base = server.resolvedUrls.local[0];
+const DEV = 'http://localhost:5190/';
+const server = (await fetch(DEV).then((r) => r.ok, () => false)) ? null
+  : await createServer({ server: { port: 5185, strictPort: true, hmr: false, watch: null }, logLevel: 'warn' }); // no reloads mid-run
+await server?.listen();
+const base = server ? server.resolvedUrls.local[0] : DEV;
 const browser = await chromium.launch();
 const errors = [];
 const missing = new Set();
@@ -19,7 +22,9 @@ const SCREENS = [
   ['menu', '?screen=menu', 'menu'],
   ['fases', '?screen=fases', 'fases'],
   ['ajustes', '?screen=ajustes', 'ajustes'],
-  ['hud', '?bot=1&t=40', 'run', null, 1800],
+  ['hud', '?bot=1&t=40', 'run', null, 1800], // the bot plays Difícil: no hearts
+  ['hud-hearts', '?screen=hud', 'run', null, 700], // Fácil: hearts and checkpoint ticks
+  ['hud-hard', '?screen=hud&hard=1', 'run', null, 700],
   ['hud-overdrive', '?screen=hud&od=8.4', 'run', '.t-gelol', 200], // frozen run, timers set by the dev hook
   ['hud-overdrive-last', '?screen=hud&od=2.4', 'run', '.t-gelol.warn', 200], // last 3 beats: red
   ['hud-pre', '?screen=hud&pre=5.4', 'run', '.t-pre', 200],
@@ -36,6 +41,8 @@ const SCREENS = [
   ['vitoria-gym', '?screen=victory', 'won', null, 900], // after the beat: "…e um LCA a menos." + knee-hugging Rafa
   ['vitoria-church', '?screen=victory&level=church', 'won', null, 450],
   ['vitoria-party', '?screen=victory&level=party', 'won', null, 450],
+  ['vitoria-hard', '?screen=victory&level=party&hard=1', 'won', null, 450],
+  ['gameover-continue', '?level=gym&t=86', 'over', '.btn.cont', 400], // a real Fácil run, no input: three hits after the checkpoint at 88
 ];
 const SIZES = [
   { tag: '844', viewport: { width: 844, height: 390 }, dpr: 3 },
@@ -51,6 +58,8 @@ const EXTRA = [ // name, query, state, init script
   ['menu-gymdone', '?screen=menu', 'menu', withSave(save(31))],
   ['fases-gymdone', '?screen=fases', 'fases', withSave(save(31))],
   ['menu-party', '?screen=menu', 'menu', withSave(save(48, 40))],
+  ['menu-hard', '?screen=menu', 'menu', withSave({ ...save(31), settings: { hard: true } })],
+  ['fases-hard', '?screen=fases', 'fases', withSave((({ levels }) => ({ levels: { ...levels, gym: { ...levels.gym, hard: true } } }))(save(31, 40)))],
   ['menu-iphone', '?screen=menu', 'menu', IPHONE],
   ['ajustes-iphone', '?screen=ajustes', 'ajustes', IPHONE],
 ];
@@ -89,7 +98,7 @@ try {
   await capture('portrait-rotate', '', { width: 390, height: 844 }, 3, null, '.rotate p', 600);
 } finally {
   await browser.close();
-  await server.close();
+  await server?.close();
 }
 if (missing.size) console.warn('missing images (shown via fallback or hidden):\n  ' + [...missing].join('\n  '));
 if (errors.length) {

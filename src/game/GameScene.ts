@@ -63,9 +63,12 @@ export class GameScene extends Phaser.Scene implements GameControl {
   private deadMs = 0;
   private endMs = 0; // performance.now() of the crash or the win
   private renderTick = 0; // fractional tick being drawn
+  private runStart = 0; // beat this run started from
   private g!: Phaser.GameObjects.Graphics; // grey-box ground when the background manifest is missing
   private dbg: Phaser.GameObjects.Graphics | null = null;
   private rafa: unknown; // RAFA[level.rafa]'s rig
+  private rafaLayer!: Phaser.GameObjects.Layer; // the rig's objects: one alpha for the invulnerability blink
+  private cp: { beat: number; coins: number; taken: Uint8Array } | null = null; // last checkpoint passed this run
   private bg: Background | null = null;
   private views!: WorldViews;
   private boss: BossActor | null = null;
@@ -92,6 +95,14 @@ export class GameScene extends Phaser.Scene implements GameControl {
 
   get coins(): number {
     return this.s.coins;
+  }
+
+  get startBeat(): number {
+    return this.runStart;
+  }
+
+  get checkpoint(): number | null {
+    return this.cp?.beat ?? null;
   }
 
   get smashed(): number {
@@ -134,7 +145,7 @@ export class GameScene extends Phaser.Scene implements GameControl {
     if (man) this.couple = Couple.create(this, man, d.theme, endX, d.sections, this.trail, d.blocksPerBeat);
     const n = this.children.list.length;
     this.rafa = RAFA[d.rafa].create(this);
-    for (const o of this.children.list.slice(n)) (o as Phaser.GameObjects.Image).setDepth?.(20); // in front of the world
+    this.rafaLayer = this.add.layer(this.children.list.slice(n)).setDepth(20); // in front of the world
     this.effects = new Fx(this);
     if (this.o.debug) {
       this.dbg = this.add.graphics().setDepth(40);
@@ -164,8 +175,18 @@ export class GameScene extends Phaser.Scene implements GameControl {
     if (cup) this.add.image(px, -0.85 * B, cup.key, cup.frames[0]).setScale(ART_SCALE).setOrigin(0.5, 1).setDepth(3);
   }
 
-  start(): void {
-    this.s = createState(this.L, this.o.startBeat);
+  /** `hearts` > 1 is easy mode. `fromCheckpoint`: a bar of run-in before the last checkpoint passed, invulnerable until
+   *  it, with the coins she had there (power-ups in the run-in are back). Otherwise from the start beat, forgetting it. */
+  start(hearts = 1, fromCheckpoint = false): void {
+    const cp = fromCheckpoint ? this.cp : null;
+    this.cp = cp;
+    this.runStart = cp ? Math.max(this.o.startBeat, cp.beat - 4) : this.o.startBeat;
+    this.s = createState(this.L, this.runStart, hearts);
+    if (cp) {
+      this.s.invulnUntil = Math.round(cp.beat * TPB);
+      this.s.coins = cp.coins;
+      for (let i = 0; i < cp.taken.length; i++) if (cp.taken[i] && this.L.items[i].kind === 'coin') this.s.taken[i] = 1;
+    }
     this.renderTick = this.s.tick;
     this.o.clock.start(this.s.tick / TPB);
     this.phase = 'run';
@@ -262,7 +283,10 @@ export class GameScene extends Phaser.Scene implements GameControl {
         const p = hazardPos(L.hazards[e.hazard], t, L.def.blocksPerBeat, this.pos);
         fx.smash(t, e.kind === 'rat', p.x * B, -(p.y + HAZARDS[e.kind].h / 2) * B);
       } else if (e.type === 'shieldBreak') fx.shieldBreak(t, x, cy);
-      else if (e.type === 'overdriveOn') fx.ignite(t, x, cy);
+      else if (e.type === 'hurt') fx.hit(t, x, cy);
+      else if (e.type === 'cue' && e.cue.cue === 'section' && s.maxHearts > 1 && L.checkpoints.includes(e.cue.beat)) {
+        this.cp = { beat: e.cue.beat, coins: s.coins, taken: s.taken.slice() };
+      } else if (e.type === 'overdriveOn') fx.ignite(t, x, cy);
       else if (e.type === 'death') {
         this.phase = 'crash';
         this.death = e;
@@ -321,6 +345,7 @@ export class GameScene extends Phaser.Scene implements GameControl {
     this.companion?.draw(s, beat, fxBeat, rx, started);
     this.couple?.draw(s, beat, fxBeat, rx);
     const alive = this.fx.deadTick < 0 && !s.won;
+    this.rafaLayer.setAlpha(alive && s.tick < s.invulnUntil && Math.floor(this.renderTick / (TPB / 4)) % 2 ? 0.35 : 1); // blink while invulnerable
     this.effects.update(fxBeat, rx, -y * B, -(y + RAFA_H[d.rafa] / 2) * B,
       { od, pre: s.tick < s.preUntil, shield: s.shield, alive, odLeft: s.overdriveUntil - beat, preLeft: s.preUntil / TPB - beat }, this.rect);
 

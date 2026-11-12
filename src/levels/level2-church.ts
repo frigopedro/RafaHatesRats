@@ -43,7 +43,7 @@ export const level2: LevelDef = {
     { beat: 116, name: 'boss1' },
     { beat: 132, name: 'boss2' },
     { beat: 148, name: 'boss3' },
-    { beat: 168, name: 'finale' },
+    { beat: 168, name: 'finale', checkpoint: false }, // needs the Gelol picked up at 166.75
   ],
   ground: [[-8, 184]],
   chart: [

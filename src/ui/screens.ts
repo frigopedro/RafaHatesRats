@@ -1,9 +1,10 @@
 // Every screen outside the canvas: one persistent HUD, one screen layer whose content is swapped, and the CSS-only
 // rotate prompt. A screen is a function that fills the layer; buttons carry data-act and run the matching action.
-import { HAZARDS, OVERDRIVE, PRE_TICKS, TICKS_PER_BEAT as TPB } from '../config';
+import { EASY_HEARTS, HAZARDS, OVERDRIVE, PRE_TICKS, TICKS_PER_BEAT as TPB } from '../config';
 import { LEVELS } from '../levels';
 import { getSettings, levelSave, onSettings, resetProgress, setSettings, type Settings } from '../save';
 import type { BgManifest } from '../game/background';
+import { checkpoints } from '../sim/sim';
 import type { HazardKind, LevelDef, SimEvent, Theme } from '../types';
 import { deathCard, menuLine } from './jokes';
 import { canFullscreen, FS_HINT, fullscreen, isStandalone } from './shell';
@@ -66,6 +67,26 @@ type Face = (typeof FACES)[number];
 const esc = (s: string) => s.replace(/[&<>"]/g, (c) => `&#${c.charCodeAt(0)};`);
 /** An art/ui image. */
 const img = (name: string, cls = '', alt = '') => `<img src="art/ui/${name}" class="${cls}" alt="${alt}" draggable="false">`;
+/** A 7×6 pixel heart (HUD lives). */
+const HEART = '<i class="heart"><svg viewBox="0 0 7 6" shape-rendering="crispEdges" aria-hidden="true"><path d="M1 0h2v1h1V0h2v1h1v2H6v1H5v1H4v1H3V5H2V4H1V3H0V1h1z"/><rect class="gloss" x="1" y="1" width="1" height="1"/></svg></i>';
+
+/** Fácil / Difícil, shown on the title and the Fases header; the choice is saved at once (setMode). */
+const MODE_LINE = ['3 corações e checkpoints', 'Um erro e volta pro início'];
+function modeSwitch(): string {
+  const hard = !!getSettings().hard;
+  const seg = (act: string, label: string, on: boolean) => `<button class="btn ${act}${on ? ' on' : ''}" data-act="${act}" aria-pressed="${on}">${label}</button>`;
+  return `<div class="mode" role="group" aria-label="Modo"><div class="seg">${seg('facil', 'FÁCIL', !hard)}${seg('dificil', 'DIFÍCIL', hard)}</div><small>${MODE_LINE[+hard]}</small></div>`;
+}
+function setMode(hard: boolean): void {
+  setSettings({ hard });
+  for (const b of layer.querySelectorAll<HTMLElement>('.mode .btn')) {
+    const on = (b.dataset.act === 'dificil') === hard;
+    b.classList.toggle('on', on);
+    b.setAttribute('aria-pressed', String(on));
+  }
+  for (const t of layer.querySelectorAll('.mode small')) t.textContent = MODE_LINE[+hard];
+}
+const modeActs: Acts = { facil: () => setMode(false), dificil: () => setMode(true) };
 
 let root: HTMLElement, layer: HTMLElement, live: HTMLElement;
 let bg: BgManifest | null = null; // the levels' backdrops (public/art/bg/manifest.json), for .scene
@@ -84,6 +105,7 @@ export function init(el: HTMLElement, onPause: () => void, sound: (name: 'click'
         <div class="hud-row"><div class="bar"><i></i></div><span class="pct">0%</span></div>
       </div>
       <div class="hud-items">
+        <span class="hearts" hidden>${HEART.repeat(EASY_HEARTS)}</span>
         <span class="hud-coins" title="Halteres dourados"><i class="ico ico-coin"></i><b>0</b></span>
         <i class="ico ico-whey" title="Whey: escudo" hidden></i>
       </div>
@@ -92,6 +114,7 @@ export function init(el: HTMLElement, onPause: () => void, sound: (name: 'click'
       <div class="timers">
         <div class="timer t-gelol" title="Gelol" hidden><i class="ico ico-gelol"></i><div class="tbar"><i></i></div><b></b></div>
         <div class="timer t-pre" title="Pré-treino" hidden><i class="ico ico-pre"></i><div class="tbar"><i></i></div><b></b></div>
+        <b class="cp-flash" hidden>CHECKPOINT</b>
       </div>
     </div>
     <div class="layer" hidden></div>
@@ -126,7 +149,7 @@ export function init(el: HTMLElement, onPause: () => void, sound: (name: 'click'
     const b = (e.target as Element).closest<HTMLButtonElement>('[data-act]');
     if (!b || b.disabled) return;
     const act = b.dataset.act!;
-    sound(/^(jogar|next|repetir|reiniciar|lv-)/.test(act) ? 'start' : /^(voltar|menu|nao)$/.test(act) ? 'back' : 'click'); // also unlocks audio
+    sound(/^(jogar|next|repetir|reiniciar|retomar|lv-)/.test(act) ? 'start' : /^(voltar|menu|nao)$/.test(act) ? 'back' : 'click'); // also unlocks audio
     acts[act]?.();
   });
   layer.addEventListener('pointerdown', (e) => {
@@ -228,11 +251,12 @@ export function menu(next: LevelDef, a: { jogar(): void; fases(): void; ajustes(
     <div class="menu-col">
       <div class="sign" data-theme="${next.theme}"><h1 class="logo panel"><img src="art/logo.png" alt="RafaHatesRats" draggable="false"><span>Rafa<b>Hates</b>Rats</span></h1></div>
       <button class="btn big play" data-act="jogar">JOGAR<small>Fase ${n}: ${esc(next.name)}</small></button>
+      ${modeSwitch()}
       <div class="pair"><button class="btn teal" data-act="fases">FASES</button><button class="btn sage" data-act="ajustes">AJUSTES</button></div>
       <div class="trail"><span class="pips">${pips}</span>${coinsTag()}<span class="sr">${done} de ${CARDS.length} fases concluídas</span></div>
       ${hint}
     </div>
-    <div class="stage"><div class="cast fig overlap">${cast}</div></div>`, a);
+    <div class="stage"><div class="cast fig overlap">${cast}</div></div>`, { ...a, ...modeActs });
   fitFigures(layer.querySelector('.stage')!, '.cast', 0.15);
 }
 
@@ -240,7 +264,7 @@ const header = (title: string, right = '') =>
   `<header class="top"><button class="btn small sage" data-act="voltar">◀ VOLTAR</button><h2>${title}</h2>${right}</header>`;
 
 export function fases(a: { voltar(): void; play(d: LevelDef): void }): void {
-  const cardActs: Acts = { voltar: a.voltar };
+  const cardActs: Acts = { voltar: a.voltar, ...modeActs };
   const cards = CARDS.map((c, i) => {
     const def = levelById(c.id);
     if (def) cardActs[`lv-${c.id}`] = () => a.play(def);
@@ -253,7 +277,7 @@ export function fases(a: { voltar(): void; play(d: LevelDef): void }): void {
       <button class="card${s.done ? ' done' : ''}" data-act="lv-${c.id}" data-theme="${def?.theme ?? c.id}"${def ? '' : ' disabled'}>
         <span class="win">${scene(def?.theme ?? (c.id as Theme))}<span class="card-art fig overlap">${img(c.kit, 'kit')}${img(c.side, 'boss')}</span></span>
         <span class="num" aria-label="Fase ${i + 1}">${i + 1}</span>
-        ${s.done ? '<span class="ribbon">CONCLUÍDA</span>' : ''}
+        ${s.done ? '<span class="ribbon">CONCLUÍDA</span>' : ''}${s.hard ? '<span class="ribbon hard">DIFÍCIL</span>' : ''}
         <span class="plaque">
           <span class="card-title">${esc(def?.name ?? c.name)}</span>
           <span class="card-boss">${c.sub}</span>
@@ -261,7 +285,7 @@ export function fases(a: { voltar(): void; play(d: LevelDef): void }): void {
         </span>
       </button>`;
   }).join('');
-  show('fases', `${scene(home.theme, 'dim')}${header('Fases', coinsTag())}<div class="cards">${cards}</div>`, cardActs, '.card:not([disabled])');
+  show('fases', `${scene(home.theme, 'dim')}${header('Fases', modeSwitch() + coinsTag())}<div class="cards">${cards}</div>`, cardActs, '.card:not([disabled])');
   fitFigures(layer.querySelector('.cards')!, '.card-art', 0.15);
 }
 
@@ -331,9 +355,10 @@ export function pause(d: LevelDef, a: { continuar(): void; reiniciar(): void; me
     </div>`, a);
 }
 
-export interface OverInfo { def: LevelDef; cause: string; pct: number; best: number; record: boolean }
+/** `checkpoint`: % of the last checkpoint passed (easy mode), which offers CONTINUAR from there; null = the classic card. */
+export interface OverInfo { def: LevelDef; cause: string; pct: number; best: number; record: boolean; checkpoint: number | null }
 
-export function gameOver(o: OverInfo, a: { retry(): void; menu(): void }): void {
+export function gameOver(o: OverInfo, a: { retry(): void; restart(): void; menu(): void }): void {
   const c = deathCard(o.cause, HAZARDS[o.cause as HazardKind]?.size === 'big'); // kinds unknown to config are fine
   // A partner face shares her head scale; a full-figure partner (Giovanni, the Aranha) stands at the figure height.
   const faces = !!c.boss?.includes('_face_');
@@ -348,16 +373,19 @@ export function gameOver(o: OverInfo, a: { retry(): void; menu(): void }): void 
           <div class="bar"><i></i></div>${o.record ? '' : '<s title="Recorde"></s>'}
         </div>
         <p class="score"><span>Agora <b>${o.pct}%</b></span>${o.record ? '<span class="rec">Novo recorde!</span>' : `<span>Recorde <b>${o.best}%</b></span>`}</p>
-        <p class="tap">Toque para tentar de novo</p>
+        ${o.checkpoint === null ? '<p class="tap">Toque para tentar de novo</p>' : `<div class="btns over-btns">
+          <button class="btn cont" data-act="retomar">CONTINUAR<small>do checkpoint · ${o.checkpoint}%</small></button>
+          <button class="btn teal" data-act="reiniciar">DO INÍCIO</button>
+        </div>`}
       </div>
-    </div>`, { menu: a.menu }, '.over-card');
+    </div>`, { menu: a.menu, retomar: a.retry, reiniciar: a.restart }, '.over-card');
   if (faces) fitFigures(layer.querySelector('.over-card')!, '.over-art');
   live.textContent = `${c.line} ${o.pct}%.`;
   tapAct = a.retry;
   tapArmedAt = performance.now() + 250; // the tap that killed her must not skip the card
 }
 
-export interface WinInfo { def: LevelDef; card: Card | undefined; coins: number; total: number; smashed: number; attempts: number; firstClear: boolean; coinRecord: boolean; next: LevelDef | null; last: boolean }
+export interface WinInfo { def: LevelDef; card: Card | undefined; hard: boolean; coins: number; total: number; smashed: number; attempts: number; firstClear: boolean; coinRecord: boolean; next: LevelDef | null; last: boolean }
 
 export function victory(w: WinInfo, a: { next(): void; repetir(): void; menu(): void }): void {
   const confetti = getSettings().reduceFx ? '' : `<div class="confetti" aria-hidden="true">${Array.from({ length: 36 }, (_, i) =>
@@ -379,6 +407,7 @@ export function victory(w: WinInfo, a: { next(): void; repetir(): void; menu(): 
       <div class="vit-body">
         <h2>${(w.card?.win ?? 'FASE CONCLUÍDA!').replace('º', '<span class="ord">º</span>')}</h2>
         ${w.card?.win2 ? `<p class="win2 then-show" style="${beat}">${w.card.win2}</p>` : ''}
+        ${w.hard ? '<span class="hard-mark">MODO DIFÍCIL</span>' : ''}
         <dl class="tiles">
           <div><dt><i class="ico ico-star"></i>Pontos</dt><dd>${w.coins * 10 + w.smashed * 5}</dd></div>
           <div><dt><i class="ico ico-coin"></i>Halteres</dt><dd>${w.coins}/${w.total}</dd></div>
@@ -399,6 +428,7 @@ export const hud = {
   tm: { gelol: { on: false, n: -1, p: '' }, pre: { on: false, n: -1, p: '' } },
   coins: 0, shield: false, boss: false, dead: false, laughUntil: 0, odFrom: 0, odUntil: 0, preUntil: 0,
   bossFace: 'angry' as Face, shockUntil: 0, beatMs: 500, faces: 'rafa_face_', beat: 0,
+  hearts: 0, maxHearts: 0, cps: [] as number[], cpTimer: 0,
 
   $<T extends HTMLElement>(sel: string): T {
     return this.el.querySelector(sel) as T;
@@ -406,8 +436,9 @@ export const hud = {
   show(on: boolean): void {
     this.el.hidden = !on;
   },
-  reset(def: LevelDef, attempt: number): void {
-    Object.assign(this, { pct: -1, coins: 0, shield: false, boss: false, dead: false, laughUntil: 0, odFrom: 0, odUntil: 0, preUntil: 0, shockUntil: 0 });
+  /** `hearts` = 0 in Difícil: no hearts, no checkpoint ticks. `coins`: kept from the checkpoint. */
+  reset(def: LevelDef, attempt: number, hearts = 0, coins = 0): void {
+    Object.assign(this, { pct: -1, coins, shield: false, boss: false, dead: false, laughUntil: 0, odFrom: 0, odUntil: 0, preUntil: 0, shockUntil: 0 });
     // Church has no boss: its bossEnter is "the bride is coming" — a beat of shock, then a determined grin.
     this.bossFace = cardOf(def)?.boss === false ? 'grin' : 'angry';
     this.beatMs = 60000 / def.bpm;
@@ -415,12 +446,32 @@ export const hud = {
     this.face = ''; // the face set may have changed: rewrite the image on the next frame
     this.$('.hud-name').textContent = def.name;
     this.$('.att').textContent = `Tentativa ${attempt}`;
-    this.$('.hud-coins b').textContent = '0';
+    this.$('.hud-coins b').textContent = String(coins);
     this.$('.ico-whey').hidden = this.$('.t-gelol').hidden = this.$('.t-pre').hidden = true;
     this.el.classList.remove('od');
     this.od = false;
     this.tm = { gelol: { on: false, n: -1, p: '' }, pre: { on: false, n: -1, p: '' } };
+    this.maxHearts = hearts;
+    this.cps = hearts ? checkpoints(def) : [];
+    this.$('.hearts').hidden = !hearts;
+    this.setHearts(hearts);
+    this.$('.hud-row .bar').querySelectorAll('s').forEach((t) => t.remove());
+    this.$('.hud-row .bar').insertAdjacentHTML('beforeend', this.cps.map((b) => `<s style="--x:${(b / def.lengthBeats) * 100}%"></s>`).join(''));
+    clearTimeout(this.cpTimer);
+    this.$('.cp-flash').hidden = true;
     this.el.hidden = false;
+  },
+  /** Fills the first `n` hearts; `pop` animates the one just lost. */
+  setHearts(n: number, pop = false): void {
+    const hs = this.el.querySelectorAll<HTMLElement>('.heart');
+    hs.forEach((h, i) => h.classList.toggle('empty', i >= n));
+    const lost = hs[n];
+    if (pop && lost) {
+      lost.classList.remove('pop');
+      void lost.offsetWidth; // restart the animation
+      lost.classList.add('pop');
+    }
+    this.hearts = n;
   },
   event(e: SimEvent): void {
     if (e.type === 'pickup') {
@@ -435,7 +486,17 @@ export const hud = {
         this.odUntil = next + OVERDRIVE.beats;
       }
     } else if (e.type === 'shieldBreak') this.$('.ico-whey').hidden = !(this.shield = false);
-    else if (e.type === 'death') this.dead = true;
+    else if (e.type === 'hurt') this.setHearts(this.hearts - 1, true);
+    else if (e.type === 'death') {
+      this.dead = true;
+      if (this.maxHearts) this.setHearts(0, true);
+    } else if (e.type === 'cue' && e.cue.cue === 'section' && this.cps.includes(e.cue.beat)) {
+      this.setHearts(this.maxHearts); // the sim refills them here too
+      const f = this.$('.cp-flash');
+      f.hidden = false;
+      clearTimeout(this.cpTimer);
+      this.cpTimer = window.setTimeout(() => (f.hidden = true), 1400);
+    }
     else if (e.type === 'cue' && (e.cue.cue === 'bossEnter' || e.cue.cue === 'bossExit')) {
       this.boss = e.cue.cue === 'bossEnter';
       if (this.boss && this.bossFace === 'grin') this.shockUntil = performance.now() + this.beatMs;

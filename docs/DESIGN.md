@@ -26,6 +26,8 @@ The players are casual, on phones. Every level must be beatable using only big j
 
 **Power-ups must show their time left where the player is looking:** a draining bar above Rafa's head (red and blinking on the last 3 beats of Gelol, last 2 of Pré-treino), a large HUD timer, and countdown ticks in the audio.
 
+**Modes** (`Settings.hard`, the switch under JOGAR and on the Fases header). **Fácil** (default): 3 hearts; a hit costs one and gives 2 beats of invulnerability (Rafa blinks), the Whey still absorbs first, holes still kill. Checkpoints are the section starts after beat 0 (`checkpoints()` in `src/sim/sim.ts`) except sections flagged `checkpoint: false` (the gym and church finales, which need the Gelol picked up just before them); passing one refills the hearts. Game over after a checkpoint offers CONTINUAR: a bar of run-in before it, invulnerable until it, with the coins she had there and the run-in's power-ups back. **Difícil**: the game as charted, one hit and back to the start; a win there marks the level (`LevelSave.hard`). The charts are the same in both modes; the solver proves them with 1 heart, and `levels.test.ts` proves every checkpoint winnable by a fresh Rafa.
+
 ## 2. Core rules (as built)
 
 Everything is in **beats and blocks**. 1 block = 96 px at the logical 1080 px view height; Rafa is pinned 28% from the left; x = beat × 4 blocks, so an event charted at beat N is met exactly on beat N.
@@ -34,7 +36,7 @@ Everything is in **beats and blocks**. 1 block = 96 px at the logical 1080 px vi
 - Hitboxes are forgiving: player 0.7 × 1.3; small hazards ≤ 0.7 × 0.6; big ≤ 1.4 × 1.2. **High hazards** (bottom ≥ 1.7 blocks): stay on the ground.
 - Hazard behaviours, each a pure function of the beat: `static`, `drop`, `run`, `bounce`, `lob`, `fly`, `pulse`. `drop`/`lob` land `lead` beats before Rafa arrives, with a ground shadow as warning.
 - One-way platforms (static or moving) and ground holes exist in the engine. Levels 1–3 use **no holes**; platforms are optional.
-- Death → 250 ms crash → game-over card → tap anywhere retries from beat 0, no reload.
+- Death → 250 ms crash → game-over card → tap anywhere retries from beat 0 (Fácil: from the last checkpoint), no reload.
 - **Gelol** (signature): from the next whole beat, 12 beats of overdrive — clock ×1.3 (music speeds up too), small hazards are smashed, fire trail, glow. **Whey**: one-hit shield. **Pré-treino**: 8 beats of one mid-air jump, never required. **Golden dumbbell**: collectible in every level.
 - The solver (`src/sim/solver.ts`) proves each level beatable at its margin and feeds the autoplay bot (`?bot=1`). It is conservative: no buffered presses, no air jump, shield break = death.
 
@@ -151,7 +153,7 @@ Background themes are described in `public/art/bg/manifest.json` under `themes.g
 
 Code-drawn atlases: `props.*` (object hazards, items, platforms, effects — all levels), `bosses.*` (O Aranha, the train, rats, and the people who are hazards: photographer, children, waiter, plus the stand-in couple).
 
-Dev flags: `?bot=1`, `?level=N`, `?t=<beat>`, `?debug=1`. Dev server for the user's phone runs on port 5190.
+Dev flags: `?bot=1` (always Difícil), `?level=N`, `?t=<beat>`, `?debug=1`, `?hard=1` (Difícil for that page load, not saved). Dev server for the user's phone runs on port 5190.
 
 ## 8. Verification
 

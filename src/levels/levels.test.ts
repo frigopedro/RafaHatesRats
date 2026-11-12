@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { HIGH_Y, PHYS, TICKS_PER_BEAT as TPB } from '../config';
+import { checkpoints } from '../sim/sim';
 import { replay, solve } from '../sim/solver';
 import { LEVELS } from './index';
 
@@ -16,6 +17,11 @@ describe.each(LEVELS)('level $id — $name', (def) => {
   });
   // Levels 1–3's kindness rules make the hop optional; level1-gym/level2-church/level3-party.test.ts prove they are
   // beatable with big jumps only.
+  // Easy mode respawns a fresh Rafa (no power-ups) at the last checkpoint passed: each must be winnable from there.
+  it.each(checkpoints(def))('is beatable from the checkpoint at beat %d with no power-ups', (cp) => {
+    const c = solve(def, { marginMs: def.marginMs, startBeat: cp });
+    expect(c.ok, `last survivor died at beat ${c.failBeat}`).toBe(true);
+  });
   it('needs the big jump: with no jump bigger than a hop it is not beatable', () => {
     const v = PHYS.jumpVel;
     PHYS.jumpVel = 10.3; // uncut apex ≈ 2.2 blocks and a bit more airtime than a real hop, so this only over-helps

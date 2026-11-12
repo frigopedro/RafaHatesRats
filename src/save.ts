@@ -5,13 +5,15 @@ export interface LevelSave {
   best: number; // best progress, 0..100 (%)
   coins: number; // most golden dumbbells in a finished run
   attempts: number;
-  done: boolean;
+  done: boolean; // won, in either mode
+  hard?: true; // won in Difícil (absent = not yet)
 }
 
 export interface Settings {
   music: number; // 0..100
   sfx: number; // 0..100
   reduceFx: boolean; // less shake / flash / confetti
+  hard?: boolean; // Difícil: one hit and back to the start (absent = Fácil: 3 hearts and checkpoints)
 }
 
 export interface Save {
@@ -39,7 +41,7 @@ export function parseSave(raw: unknown, reduceMotion = false): Save {
     const id = key === '1' ? 'gym' : key;
     if (!/^[a-z][a-z0-9_-]{0,23}$/.test(id)) continue;
     const l = obj(v);
-    levels[id] = { best: num(l.best, 100), coins: num(l.coins, 9999), attempts: num(l.attempts, 1e9), done: l.done === true };
+    levels[id] = { best: num(l.best, 100), coins: num(l.coins, 9999), attempts: num(l.attempts, 1e9), done: l.done === true, ...(l.hard === true && { hard: true as const }) };
   }
   return {
     levels,
@@ -47,6 +49,7 @@ export function parseSave(raw: unknown, reduceMotion = false): Save {
       music: num(s.music, 100, d.music),
       sfx: num(s.sfx, 100, d.sfx),
       reduceFx: typeof s.reduceFx === 'boolean' ? s.reduceFx : d.reduceFx,
+      ...(s.hard === true && { hard: true }),
     },
   };
 }

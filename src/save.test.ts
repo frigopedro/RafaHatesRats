@@ -28,6 +28,12 @@ describe('parseSave', () => {
     expect(parseSave({ levels: { 1: { best: 10 }, gym: { best: 70 } } }).levels.gym.best).toBe(70);
   });
 
+  it('reads the mode and hard wins, defaulting to Fácil', () => {
+    const s = parseSave({ levels: { gym: { done: true, hard: true }, party: { hard: 'yes' } }, settings: { hard: true } });
+    expect([s.levels.gym.hard, s.levels.party.hard, s.settings.hard]).toEqual([true, undefined, true]);
+    expect(parseSave({ settings: { hard: 1 } }).settings.hard).toBeUndefined();
+  });
+
   it('keeps a valid save as is', () => {
     const ok = { levels: { church: { best: 63, coins: 21, attempts: 40, done: true } }, settings: { music: 0, sfx: 55, reduceFx: false } };
     expect(parseSave(JSON.parse(JSON.stringify(ok)), true)).toEqual(ok);

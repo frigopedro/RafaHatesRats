@@ -69,6 +69,7 @@ export type ChartEvent = HazardEvent | ItemEvent | PlatformEvent | CueEvent;
 export interface Section {
   beat: number;
   name: string; // shared by chart and song, e.g. 'warmup', 'boss1'
+  checkpoint?: false; // easy mode: this section start is not a checkpoint (src/sim/sim.ts checkpoints)
 }
 
 export interface LevelDef {
@@ -101,6 +102,7 @@ export interface Level {
   halfW: number[]; // per hazard: hitbox half-width in blocks, including the margin inflation
   reach: number[]; // per hazard: largest |beat − hazard.beat| at which it can touch Rafa
   maxReach: number;
+  checkpoints: number[]; // beats where hearts refill (checkpoints(def))
   minHold: [number, number]; // PHYS.minHoldMs in ticks at this BPM: [normal, Gelol overdrive]
 }
 
@@ -125,6 +127,8 @@ export interface SimState {
   buffer: number; // ticks left on a press buffered in the air
   airJump: boolean; // pré-treino mid-air jump still unused this airtime
   shield: boolean; // Whey held
+  hearts: number; // hits left: 1 = the next unshielded hit kills (hard mode, solver)
+  maxHearts: number; // refilled to this at every checkpoint
   invulnUntil: number; // tick
   preUntil: number; // tick; pré-treino active while tick < preUntil
   overdriveFrom: number; // whole beat; Gelol overdrive is active for overdriveFrom ≤ beat < overdriveUntil
@@ -143,6 +147,7 @@ export type SimEvent =
   | { type: 'pickup'; tick: number; item: number; kind: ItemKind }
   | { type: 'smash'; tick: number; hazard: number; kind: HazardKind }
   | { type: 'shieldBreak'; tick: number; hazard: number; kind: HazardKind }
+  | { type: 'hurt'; tick: number; hazard: number; kind: HazardKind } // a heart lost (easy mode)
   | { type: 'overdriveOn' | 'overdriveOff'; tick: number }
   | { type: 'death'; tick: number; cause: HazardKind | 'hole'; hazard: number } // hazard = -1 for holes
   | { type: 'win'; tick: number }
@@ -157,7 +162,9 @@ export interface GameHooks {
 
 /** What the shell/UI can tell the game to do. */
 export interface GameControl {
-  start(): void; // (re)start the run from the start beat
+  start(hearts?: number, fromCheckpoint?: boolean): void; // (re)start the run: from the start beat, or a bar before the last checkpoint passed
+  readonly startBeat: number; // beat the current run started from (music starts here)
+  readonly checkpoint: number | null; // beat of the last checkpoint passed this run (only with more than 1 heart)
   setPaused(paused: boolean): void;
   readonly running: boolean; // a run is in progress (not over, not waiting to start)
   readonly coins: number; // golden dumbbells picked up this run
