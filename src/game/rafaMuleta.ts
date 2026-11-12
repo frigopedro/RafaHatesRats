@@ -1,4 +1,4 @@
-// Level-2 Rafa on two crutches (rafaela-muleta.PNG), drawn 1:1. Same call shape as rafaView.ts (createRafa/drawRafa).
+// Level-2 Rafa on two crutches (rafa-muleta.PNG), drawn 1:1. Same call shape as rafaView.ts (createRafa/drawRafa).
 // Frame origins are her face (x) and feet / crutch tips (y). Her sheet's walk frames are near-copies — crutches and
 // front foot never move, only the braced back leg lifts — so the gait is built from them as a swing-through: on the
 // beat and the half-beat the tips and foot plant, and while planted the whole sprite slides back at exactly the

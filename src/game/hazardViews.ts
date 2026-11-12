@@ -16,7 +16,7 @@ export const ART_SCALE = 3;
 export const ARANHA_SCALE = 0.75; // public/art/aranha.json meta.scale
 const PLAT: Record<Theme, string> = { gym: 'plat_gym', church: 'plat_church', party: 'plat_stage' };
 /** Ceiling height (art px from the view top, manifest coords) that hanging chains run up to. */
-const CEILING: Record<Theme, number> = { gym: 24, church: 16, party: 22 };
+export const CEILING: Record<Theme, number> = { gym: 24, church: 16, party: 22 };
 const CHAIN_FROM = 44; // bag_chain starts this many art px above the bag's pivot (its ring)
 const LANTERN_FROM = 35; // same for lantern_chain and the lantern's ring
 

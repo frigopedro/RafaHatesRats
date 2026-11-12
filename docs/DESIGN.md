@@ -12,7 +12,7 @@ Rafa and Fabinho compete for first place in Gym Rats. She wins, and wrecks her k
 |---|---|---|---|
 | id / theme / songId | `gym` | `church` | `party` |
 | Place | The gym | The church, down the aisle | The wedding reception |
-| Rafa (`LevelDef.rafa`) | `standing` — gym clothes (`rafaGym`) | `crutches` — brown dress (`rafaMuleta`) | `wheelchair` — sage dress (`rafaView`) |
+| Rafa (`LevelDef.rafa`) | `standing` — gym clothes (`rafaGym`) | `crutches` — sage dress, as in level 3 (`rafaMuleta`) | `wheelchair` — sage dress (`rafaView`) |
 | With / against | Boss: **Fabinho** (in gym clothes) | Companion: **Giovanni**. **No boss** — reach the altar before the bride, **Nathalia**, who runs in behind her as a cosmetic chaser; **Murilo** waits at the altar | Boss: **O Aranha da Carreta** on his party train |
 | BPM / length | 120 / 144 beats | 132 / 176 beats | 144 / 208 beats |
 | Timing margin (solver) | ±110 ms | ±75 ms | ±55 ms |
@@ -53,7 +53,7 @@ Small: `dumbbell`, `kettlebell`, `bottle`, `rat` (scurrying toward her — the t
 | Leaps and lands hard | `shockwave`, `run` along the floor | Hop |
 | Bowls a medicine ball | `medBall` 0.55 × 0.55, `bounce` | Under the high bounce or over the low one |
 
-Between phases he taunts with push-ups and sit-ups (he's competing). Finale: Gelol, she overtakes him, he ends face-down (`defeated`), then sulking.
+Between attacks he shows off (he's competing): in every idle window of ≥ 4 beats (taunt breaks included) he does an exercise in time with the music, a different one per window in the order squats → push-ups → pull-ups → burpees, repeating. Whole reps from the window's first whole beat; the key frame lands on a beat (squat: deepest, 1 rep / 2 beats; push-up: chest down, 1 / beat; pull-up: chin over the bar, 1 / 2 beats; burpee: jump peak, 1 / 4 beats). He is back in his run at least 1 beat before every telegraph, and windows stop at the `finale` section (the Gelol finale keeps its own behaviour). Floor exercises keep his spot ahead of Rafa, gliding with the scroll (skid dust); the pull-up bar hangs from the ceiling truss on two thin chains that travel with him. Level 1 as charted: squats 83–87, push-ups 103–107, pull-ups 116–120; the gap before the finale (132.1–136) is too short, so burpees do not appear yet. Windows: `idleWindows` / `exercise` in `src/game/fabinhoGym.ts`. Finale: Gelol, she overtakes him, he ends face-down (`defeated`), then sulking.
 
 ### Level 2 — church (new art)
 Rafa hurries down the aisle on a crutch. Giovanni walks half a step behind her as a cosmetic companion: he copies her jumps a moment late, reacts when she crashes, and cannot be hit.
@@ -96,7 +96,8 @@ Optional platforms: low stage risers (`plat_stage`).
 | `fabinho-sheet.png` | not sliced (the suit Fabinho is not in the game) | Run, leap, land, throw, push-ups, sit-ups, idle, defeated, sulk; faces |
 | `rafa-sheet-gym.PNG` | present (45 sprites) → `public/art/rafagym.*`, view `src/game/rafaGym.ts` | Level-1 Rafa: black gym clothes and **glasses**. Run ×5, walk ×5, jump sequence, landing, arms-up cheer, squats, push-ups, stretches, sitting hugging her knees (the level-1 ending), 6 faces with glasses for the level-1 HUD and cards |
 | `fabinho-v2-gym.PNG` | present (35 sprites) → `public/art/fabinhogym.*`, tables `FABINHOGYM` | The level-1 boss: Fabinho in a black T-shirt, shorts and sneakers. Replaces the earlier `fabinho-gym.PNG`. No push-up or lying poses: his taunts are laughing, arms crossed, checking his phone. The suit Fabinho is his wedding look |
-| `rafaela-muleta.PNG` | present (39) → `public/art/rafamuleta.*`, view `src/game/rafaMuleta.ts` | Level-2 Rafa: two crutches, short brown dress, knee brace. Replaces the derived crutch rig. Includes five dance poses used for her win |
+| `fabinho-gym-exercise.PNG` | present (44, real alpha) → exercise frames only, into `public/art/fabinhogym.*`, tables `FABINHOGYM.squat/pushup/pullup/burpee` | Gym Fabinho's exercises: pull-ups (bar drawn in the sprite), squats, push-ups, burpee. Scaled ×1.51 so its standing squat frame stands 236 px like his other frames; pivots on the hands / front foot (floor) or the bar centre (pull-ups). His run, poses and faces still come from `fabinho-v2-gym.PNG` |
+| `rafa-muleta.PNG` | present (40; the eight touching faces are split) → `public/art/rafamuleta.*`, view `src/game/rafaMuleta.ts` | Level-2 Rafa: two crutches, long sage dress (the one she wears in level 3), knee brace. Replaces the earlier `rafaela-muleta.PNG` (short brown dress). Upright walk ×4 (her gait), leaning walk ×5 (under Gelol), five dance poses used for her win |
 | `giovanni-sheet.PNG` | present (35) → `public/art/giovanni.*` | Level-2 companion: curly hair, black suit. Walks behind Rafa; pulls out his phone when she crashes |
 | `nathalia-sheet.PNG` | present (37) → `public/art/nathalia.*` | The bride: runs in behind Rafa during the final dash (cosmetic), then stands at the altar |
 | `murilo-sheet.PNG` | present (38) → `public/art/murilo.*` | The groom, grey three-piece suit: waits at the altar |

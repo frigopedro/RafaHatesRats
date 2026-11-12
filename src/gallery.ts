@@ -4,7 +4,7 @@
 import Phaser from 'phaser';
 import { animFrame, FABINHOGYM, FABINHOGYM_ATLAS, RAFAGYM_ATLAS, RAFAMULETA_ATLAS, type SheetAnim } from './art/sheets';
 import { TICKS_PER_BEAT as TPB, VIEW } from './config';
-import { createFabinhoGymRun, drawFabinhoGymRun } from './game/fabinhoGym';
+import { createFabinhoGymRun, drawFabinhoGymRun, EXERCISES, exercise } from './game/fabinhoGym';
 import { createRafaGym, drawRafaGym } from './game/rafaGym';
 import { createRafaMuleta, drawRafaMuleta } from './game/rafaMuleta';
 import { createRafa, drawRafa, RAFA_ATLAS, type RafaFx } from './game/rafaView';
@@ -196,7 +196,7 @@ function sheetSection<K extends string>(title: string, atlas: string, table: Rec
     height: TITLE + ROW[0] + ROW[1] - TITLE,
     preload: (scene) => { if (!scene.textures.exists(atlas)) scene.load.atlas(atlas, `art/${atlas}.png`, `art/${atlas}.json`); },
     create(scene, top, g) {
-      const per = 6, w = W / per;
+      const per = 7, w = W / per;
       const cells = cases.map((c, i) => {
         const row = Math.floor(i / per), x = (i % per) * w;
         const y0 = top + TITLE + (row ? ROW[0] - TITLE : 0), h = ROW[row] - (row ? 0 : TITLE);
@@ -210,7 +210,8 @@ function sheetSection<K extends string>(title: string, atlas: string, table: Rec
           const lb = anim.loop ? beat : beat % 2;
           const groundY = y0 + h - 50;
           cell(g, x, w, y0, groundY, y0 + h, c.moving ? beat * 4 * B : 0, k);
-          const arc = c.name === 'leap' && lb < 1 ? 4 * 2 * B * lb * (1 - lb) : 0;
+          const ex = EXERCISES.indexOf(c.name as (typeof EXERCISES)[number]); // pull-up bar height, burpee jump
+          const arc = c.name === 'leap' && lb < 1 ? 4 * 2 * B * lb * (1 - lb) : ex >= 0 ? exercise({ from: 0, to: Infinity, k: ex }, beat)!.lift * B : 0;
           img.setFrame(animFrame(anim, lb)).setY(groundY - arc);
         }
       };
@@ -218,10 +219,11 @@ function sheetSection<K extends string>(title: string, atlas: string, table: Rec
   };
 }
 const FAB_CASES: { name: keyof typeof FABINHOGYM; moving?: boolean }[] = [
-  { name: 'run', moving: true }, { name: 'leap' }, { name: 'land' }, { name: 'throw' }, { name: 'idle' },
-  { name: 'taunt_laugh' }, { name: 'taunt_phone' }, { name: 'defeated' }, { name: 'sulk' },
+  { name: 'run', moving: true }, { name: 'leap' }, { name: 'pullup' }, { name: 'land' }, { name: 'throw' }, { name: 'idle' },
+  { name: 'taunt_laugh' }, { name: 'taunt_phone' }, { name: 'defeated' }, { name: 'sulk' }, { name: 'squat' },
+  { name: 'pushup' }, { name: 'burpee' },
 ];
-const fabinhoGymSection = sheetSection('Fabinho — gym v2, level-1 boss (FABINHOGYM) — taunt_* = laugh / phone; defeated = baked lying pose',
+const fabinhoGymSection = sheetSection('Fabinho — gym v2, level-1 boss (FABINHOGYM) — taunt_* = laugh / phone; defeated = baked lying pose; squat / pushup / pullup / burpee = exercise sheet, one rep from beat 0',
   FABINHOGYM_ATLAS, FABINHOGYM, FAB_CASES);
 
 // ?film=run|gelol|hop|big: gym Rafa frame by frame at 60 fps (120 BPM → 30 frames per beat), each cell on ground

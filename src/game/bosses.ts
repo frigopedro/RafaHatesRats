@@ -9,19 +9,21 @@ import Phaser from 'phaser';
 import { animFrame, FABINHOGYM, FABINHOGYM_ATLAS, type SheetAnim } from '../art/sheets';
 import { ARANHA_AHEAD, BOSS_AHEAD, VIEW } from '../config';
 import { releaseBeat } from '../sim/behaviors';
-import { createFabinhoGymRun, drawFabinhoGymRun, type FabinhoGymRun } from './fabinhoGym';
+import { BAR_HALF, createFabinhoGymRun, drawFabinhoGymRun, exercise, idleWindows, type BossCue, type FabinhoGymRun, type Idle } from './fabinhoGym';
 import type { BossId, HazardKind, Level } from '../types';
-import { ARANHA, ARANHA_SCALE, ART_SCALE, BOSSES } from './hazardViews';
+import { ARANHA, ARANHA_SCALE, ART_SCALE, BOSSES, CEILING } from './hazardViews';
 
 const B = VIEW.block;
 
-/** A move in progress: `t` = beats since its cue; `release` = beats from the cue to its hazard's release (NaN if none). */
-export interface BossMove { name: string; t: number; release: number }
+/** A move in progress: `t` = beats since its cue; `release` = beats from the cue to its hazard's release (NaN if none);
+ *  `idle` = the idle window the beat is in (gym Fabinho's exercises), if any. */
+export interface BossMove { name: string; t: number; release: number; idle?: Idle }
 /** Where and how to draw the boss: `ahead`/`lift` in blocks from Rafa's feet; `flip` = mirror the frame (Fabinho's art
  *  faces right, the Aranha's left); frame '' = boss hidden (e.g. he is the hazard in flight). */
 export interface BossPose {
   frame: string; ahead: number; lift: number; flip: boolean; rot?: number; skid?: boolean; hit?: boolean; train?: TrainPose;
   run?: number; // run phase in cycles: gym Fabinho draws his run cycle (fabinhoGym.ts) instead of `frame`
+  bar?: boolean; // the frame hangs from a pull-up bar (its origin): chains run from the bar ends up to the ceiling
 }
 /** The train's body pivot `ahead` blocks of Rafa; `crash` = beats since it slammed to a stop (debris), if it did. */
 export interface TrainPose { ahead: number; crash?: number }
@@ -40,7 +42,7 @@ const easeOut = (t: number) => 1 - (1 - t) * (1 - t);
 const frac = (v: number) => v - Math.floor(v);
 
 // --- Fabinho (level 1): runs ahead of Rafa, turns to throw plates / bowl med balls, leaps into shockwaves, ---
-// --- stops to taunt her between phases, and ends knocked flat when she overtakes him. ---
+// --- shows off with exercises between them (fabinhoGym.ts), and ends knocked flat when she overtakes him. ---
 const FAB = { atlas: FABINHOGYM_ATLAS, file: 'art/fabinhogym', anim: FABINHOGYM };
 const A = FAB.anim;
 const first = (a: SheetAnim) => a.frames[0], last = (a: SheetAnim) => a.frames[a.frames.length - 1];
@@ -54,7 +56,9 @@ const run = (beat: number, rate = 1): BossPose => ({ frame: animFrame(A.run, bea
 export const fabinho: BossDef = {
   atlas: FAB.atlas, png: `${FAB.file}.png`, json: `${FAB.file}.json`, scale: 1, ahead: BOSS_AHEAD,
   attacks: { frisbeeLow: 'frisbee', frisbeeHigh: 'frisbee', shockwave: 'shockwave', medBallLow: 'medBall', medBallHigh: 'medBall' },
-  pose({ name, t, release: r }, beat) {
+  pose({ name, t, release: r, idle }, beat) {
+    const ex = idle && exercise(idle, beat); // facing away from her, gliding along with the scroll like his wind-ups
+    if (ex) return { ...ex, ahead: D, flip: false };
     switch (name) {
       case 'enter': // overtakes her from behind
         if (t < 3) return { ...run(beat, 1.6), ahead: lerp(-10, D, easeOut(t / 3)) };
@@ -206,10 +210,12 @@ class Train {
   }
 }
 
-interface Cue { beat: number; name: string; release: number }
+const CEIL_Y = (CEILING.gym - 296) * ART_SCALE; // gym truss (bg manifest groundY 296): the pull-up chains' top
 
 export class BossActor {
-  private readonly cues: Cue[] = [];
+  private readonly cues: BossCue[] = [];
+  private readonly idle: Idle[]; // gym Fabinho's exercise windows
+  private readonly chains: Phaser.GameObjects.Graphics;
   private readonly img: Phaser.GameObjects.Image;
   private readonly legs: FabinhoGymRun | null; // gym Fabinho's run cycle
   readonly kinds: ReadonlySet<HazardKind>;
@@ -240,6 +246,8 @@ export class BossActor {
     this.img = scene.add.image(0, 0, def.atlas).setScale(def.scale).setDepth(8).setVisible(false);
     this.legs = def.atlas === FABINHOGYM_ATLAS ? createFabinhoGymRun(scene) : null;
     this.legs?.root.setDepth(8).setVisible(false);
+    this.idle = this.legs ? idleWindows(this.cues, L.def.sections.find((s) => s.name === 'finale')?.beat) : [];
+    this.chains = scene.add.graphics().setDepth(7.9);
     this.train = def.train ? new Train(scene, BOSSES, bpb) : null; // the train stays in the bosses atlas
     // Optional sheets: loaded after preload; a missing atlas leaves that person out.
     const endX = L.def.lengthBeats * bpb * B;
@@ -257,10 +265,16 @@ export class BossActor {
       if (!c.img && this.scene.textures.get(c.atlas).has('g_pose_laugh')) c.img = this.scene.add.image(c.x, 0, c.atlas, 'g_pose_armsup').setDepth(7).setFlipX(c.flip);
       c.img?.setFrame((Math.floor(fxBeat) + i) & 1 ? 'g_pose_laugh' : 'g_pose_armsup').setY(-Math.abs(Math.sin(Math.PI * fxBeat)) * 0.25 * B);
     });
-    let c: Cue | undefined;
+    let c: BossCue | undefined;
     for (const q of this.cues) if (q.beat <= beat) c = q;
-    const p = c ? this.def.pose(Object.assign(this.m, { name: c.name, t: beat - c.beat, release: c.release }), beat) : null;
+    const idle = this.idle.find((w) => beat >= w.from && beat < w.to);
+    const p = c ? this.def.pose(Object.assign(this.m, { name: c.name, t: beat - c.beat, release: c.release, idle }), beat) : null;
     this.train?.draw(p?.train, beat, rx);
+    this.chains.clear();
+    if (p?.bar) {
+      const x = Math.round(rx + p.ahead * B), y = Math.round(-p.lift * B);
+      this.chains.lineStyle(4, 0x1a1420, 1).lineBetween(x - BAR_HALF, y, x - BAR_HALF, CEIL_Y).lineBetween(x + BAR_HALF, y, x + BAR_HALF, CEIL_Y);
+    }
     const legs = !!(this.legs && p?.frame && p.run !== undefined);
     this.legs?.root.setVisible(legs);
     this.img.setVisible(!!p?.frame && !legs);

@@ -38,9 +38,20 @@ export const FABINHOGYM = {
   idle: one('g_pose_idle'),
   defeated: one('g_defeated'), // already lying (head to the right; flipX with him facing left)
   sulk: one('g_pose_think'),
+  // Exercises between attacks (fabinho-gym-exercise.PNG, ×1.51 so he stands the same 236 px; src/game/fabinhoGym.ts).
+  // One rep each, starting on a beat; the key frame lands on a beat. Origin = hands / front foot on the floor;
+  // pull-ups = the bar's centre.
+  squat: { frames: ['squat_0', 'squat_1', 'squat_2', 'squat_1'], perBeat: 2, loop: true }, // deepest on beat 1 of 2
+  pushup: { frames: ['pushup_1', 'pushup_2', 'pushup_0', 'pushup_2'], perBeat: 4, loop: true }, // chest down on the beat
+  pullup: { frames: ['pullup_0', 'pullup_1', 'pullup_2', 'pullup_1'], perBeat: 2, loop: true }, // chin over on beat 1 of 2
+  burpee: { // crouch, plank (chest down), crouch, jump (peak on beat 3 of 4), land
+    frames: ['burpee_0', 'burpee_0', 'burpee_0', 'burpee_0', 'burpee_1', 'burpee_1', 'burpee_2', 'burpee_2',
+      'burpee_0', 'burpee_0', 'burpee_3', 'burpee_4', 'burpee_4', 'burpee_3', 'burpee_3', 'burpee_3'],
+    perBeat: 4, loop: true,
+  },
 } satisfies Record<string, SheetAnim>;
 
-/** The crutch Rafa (level 2), from rafaela-muleta.PNG, drawn 1:1, ≈ 178 px with crutches. Origin x = her face,
+/** The crutch Rafa (level 2), from rafa-muleta.PNG (sage dress), drawn 1:1, ≈ 172 px walking. Origin x = her face,
  *  y = feet / crutch tips. Her walk frames are near-copies (crutches and front foot never move; only the braced back
  *  leg lifts), so src/game/rafaMuleta.ts builds the gait from them; `dance` is her victory at the altar. */
 export const RAFAMULETA_ATLAS = 'rafamuleta';

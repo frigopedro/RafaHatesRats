@@ -52,23 +52,21 @@ const RAFAGYM = [
   ['knees', [1818, 565, 149, 146]], ['asleep', [1998, 567, 156, 146]], ['_z', [2106, 564, 17, 22]],
 ];
 
-// Gym Fabinho v2 (level-1 boss), the crutch Rafa (level 2; 'face_laugh+grin' = two faces touching on the sheet, split
+// Gym Fabinho v2 (level-1 boss), the crutch Rafa (level 2; 'faces' = her eight faces touching on the sheet, split
 // below) and the level-2 wedding cast: all in Rafa's wheelchair-sheet layout. Boxes from this script's component pass.
 const RAFAMULETA_SHEET = [
-  ['turn_front', [92, 13, 148, 291]], ['turn_34', [294, 13, 146, 290]], ['turn_side', [489, 14, 123, 289]],
-  ['turn_back34', [679, 14, 136, 289]], ['turn_back', [863, 14, 147, 287]], ['turn_side_l', [1070, 14, 118, 287]],
-  ['turn_34_l', [1244, 13, 147, 288]],
-  ['pose_idle', [45, 329, 144, 273]], ['pose_wave', [241, 329, 156, 273]], ['pose_phone', [443, 329, 135, 273]],
-  ['pose_laugh', [627, 327, 153, 273]], ['pose_armscrossed', [811, 329, 144, 272]], ['pose_armsup', [973, 325, 162, 277]],
-  ['pose_think', [1172, 336, 143, 266]], ['pose_point', [1337, 331, 183, 275]],
-  ['crutch_0', [19, 624, 115, 178]], ['crutch_1', [141, 621, 111, 181]], ['crutch_2', [257, 624, 114, 178]],
-  ['crutch_3', [379, 622, 111, 179]], ['crutch_4', [503, 623, 107, 178]], ['back_0', [667, 621, 96, 180]],
-  ['back_1', [775, 621, 91, 180]], ['back_2', [878, 621, 94, 180]], ['walk_0', [1034, 629, 109, 176]],
-  ['walk_1', [1165, 630, 98, 175]], ['walk_2', [1283, 632, 99, 173]], ['walk_3', [1405, 632, 97, 173]],
-  ['face_smile', [15, 851, 119, 153]], ['face_laugh+grin', [137, 852, 230, 152]], ['face_soft', [370, 852, 111, 152]],
-  ['face_happy', [485, 852, 109, 152]], ['face_excited', [598, 851, 111, 153]], ['face_shocked', [714, 852, 111, 152]],
-  ['face_angry', [828, 852, 120, 152]], ['dance_0', [966, 826, 107, 186]], ['dance_1', [1084, 826, 98, 186]],
-  ['dance_2', [1192, 829, 94, 183]], ['dance_3', [1302, 829, 98, 183]], ['dance_4', [1418, 821, 107, 191]],
+  ['turn_front', [86, 12, 151, 307]], ['turn_34', [300, 12, 137, 307]], ['turn_side', [503, 12, 114, 307]],
+  ['turn_back34', [680, 12, 139, 307]], ['turn_back', [866, 12, 145, 307]], ['turn_side_l', [1060, 12, 119, 307]],
+  ['turn_34_l', [1241, 12, 152, 307]],
+  ['pose_idle', [53, 335, 133, 281]], ['pose_wave', [242, 335, 149, 281]], ['pose_phone', [441, 337, 132, 279]],
+  ['pose_laugh', [628, 337, 139, 279]], ['pose_armscrossed', [813, 335, 136, 281]], ['pose_armsup', [978, 328, 158, 288]],
+  ['pose_think', [1173, 341, 139, 275]], ['pose_point', [1340, 338, 176, 278]],
+  ['crutch_0', [24, 638, 102, 165]], ['crutch_1', [143, 638, 103, 165]], ['crutch_2', [257, 638, 105, 165]],
+  ['crutch_3', [374, 638, 100, 165]], ['crutch_4', [492, 638, 100, 165]], ['back_0', [677, 639, 88, 162]],
+  ['back_1', [784, 638, 85, 163]], ['back_2', [884, 638, 88, 163]], ['walk_0', [1057, 638, 98, 169]],
+  ['walk_1', [1178, 636, 96, 171]], ['walk_2', [1296, 636, 89, 171]], ['walk_3', [1418, 635, 91, 172]],
+  ['faces', [18, 844, 931, 165]], ['dance_0', [971, 833, 102, 180]], ['dance_1', [1086, 833, 97, 180]],
+  ['dance_2', [1196, 833, 101, 179]], ['dance_3', [1312, 833, 98, 178]], ['dance_4', [1426, 831, 97, 182]],
 ];
 const FABINHOGYM_SHEET = [
   ['turn_front', [90, 12, 122, 296]], ['turn_34', [317, 12, 103, 298]], ['turn_side', [527, 12, 89, 296]],
@@ -84,6 +82,26 @@ const FABINHOGYM_SHEET = [
   ['face_smile', [41, 850, 148, 171]], ['face_laugh', [229, 850, 148, 171]], ['face_grin', [417, 852, 149, 169]],
   ['face_soft', [607, 850, 145, 170]], ['face_happy', [790, 851, 146, 169]], ['face_shocked', [981, 850, 145, 169]],
   ['face_sad', [1169, 851, 148, 169]], ['face_angry', [1361, 851, 142, 167]],
+];
+// His exercise sheet: same layout for rows 0–1 and the faces; row 2 = run ×5, pull-ups (the bar is in the sprite),
+// squats; row 3 = push-ups, burpee. Only the exercises are used (`x_` = cut and checked, not shipped).
+const FABEX_SHEET = [
+  ['x_turn_front', [98, 13, 111, 257]], ['x_turn_34', [323, 14, 101, 258]], ['x_turn_side', [535, 13, 83, 257]],
+  ['x_turn_back34', [712, 14, 99, 258]], ['x_turn_back', [895, 13, 111, 259]], ['x_turn_side_l', [1104, 13, 86, 259]],
+  ['x_turn_34_l', [1301, 13, 108, 259]],
+  ['x_pose_idle', [68, 296, 104, 236]], ['x_pose_wave', [248, 295, 122, 237]], ['x_pose_phone', [429, 294, 102, 238]],
+  ['x_pose_hips', [601, 293, 123, 239]], ['x_pose_armscrossed', [792, 296, 96, 236]], ['x_pose_cheer', [946, 293, 134, 238]],
+  ['x_pose_chin', [1159, 300, 103, 231]], ['x_pose_point', [1343, 296, 140, 235]],
+  ['x_run_0', [34, 560, 107, 146]], ['x_run_1', [152, 559, 103, 142]], ['x_run_2', [264, 560, 110, 149]],
+  ['x_run_3', [387, 561, 97, 149]], ['x_run_4', [487, 559, 112, 147]],
+  ['pullup_0', [630, 555, 118, 175]], ['pullup_1', [759, 556, 115, 161]], ['pullup_2', [884, 551, 119, 159]],
+  ['squat_0', [1058, 555, 66, 156]], ['squat_1', [1161, 580, 97, 128]], ['squat_2', [1282, 591, 101, 116]],
+  ['squat_3', [1412, 553, 69, 154]],
+  ['pushup_0', [42, 735, 152, 86]], ['pushup_1', [217, 753, 165, 68]], ['pushup_2', [410, 748, 162, 72]],
+  ['pushup_3', [597, 735, 172, 85]], ['burpee_0', [820, 740, 93, 84]], ['burpee_1', [934, 742, 131, 82]],
+  ['burpee_2', [1078, 752, 145, 74]], ['burpee_3', [1242, 736, 67, 98]], ['burpee_4', [1363, 714, 76, 126]],
+  ['x_face_0', [77, 849, 135, 160]], ['x_face_1', null], ['x_face_2', null], ['x_face_3', null], ['x_face_4', null],
+  ['x_face_5', null], ['x_face_6', null], ['x_face_7', [1321, 853, 133, 154]],
 ];
 const GIOVANNI_SHEET = [
   ['turn_front', [105, 10, 110, 257]], ['turn_34', [289, 12, 102, 255]], ['turn_side', [482, 13, 88, 253]],
@@ -154,7 +172,7 @@ const KEEP = {
     'cheer_1', 'knees', 'guard', 'leap', 'leap_up', 'glow'],
   rafamuleta: [/^walk_[0-3]$/, /^crutch_[0-3]$/, /^dance_\d$/, 'g_pose_idle', 'g_pose_armsup', 'g_pose_point', 'glow'],
   fabinhogym: [/^run_\d$/, 'g_pose_idle', 'g_pose_wave', 'g_pose_armsup', 'g_pose_laugh', 'g_pose_phone', 'g_pose_think',
-    'g_defeated'],
+    'g_defeated', /^(squat|pushup|pullup)_[0-2]$/, /^burpee_\d$/],
   giovanni: [G_RUN, 'g_pose_idle', 'g_pose_phone', 'g_pose_armsup', 'g_pose_laugh'],
   nathalia: [G_RUN, 'g_pose_idle', 'g_pose_laugh', 'g_pose_armsup'],
   murilo: [G_RUN, 'g_pose_idle', 'g_pose_think', 'g_pose_armsup', 'g_pose_laugh'],
@@ -626,35 +644,64 @@ const FABINHOGYM_ANCHOR = standardAnchors(fabgym);
   }
   g.push({ name: 'g_defeated', png, w: png.width, h: png.height });
   FABINHOGYM_ANCHOR.g_defeated = [Math.round(png.width / 2), png.height - RING];
-  writeAtlas('fabinhogym', 'art-src/characters/fabinho-v2-gym.PNG', [...fabgym, ...g], FABINHOGYM_ANCHOR);
+  // Exercises (fabinho-gym-exercise.PNG): one uniform scale, so its standing squat frame stands FAB_H like he does.
+  // Pivots: the front contact on the floor (handX: hands in a plank, toes standing), so hands / feet stay planted;
+  // pull-ups on the bar's centre (its widest row), so the bar holds still while he pulls up.
+  const ex = slice('art-src/characters/fabinho-gym-exercise.PNG', FABEX_SHEET).filter((s) => !s.name.startsWith('x_'));
+  const kx = FAB_H / (byName(ex).squat_0.h - 2 * RING);
+  for (const s of ex) {
+    let a = [handX(s.png), s.h - RING];
+    if (s.name.startsWith('pullup')) {
+      let best = 0;
+      for (let y = 0; y < s.h; y++) {
+        let x0 = -1, x1 = -1;
+        for (let x = 0; x < s.w; x++) if (s.png.data[(y * s.w + x) * 4 + 3] >= 200) { if (x0 < 0) x0 = x; x1 = x; }
+        if (x1 - x0 > best) { best = x1 - x0; a = [Math.round((x0 + x1) / 2), y]; }
+      }
+      if (s.name === 'pullup_0') console.log(`  pull-up bar: half-width ${(best * kx / 2).toFixed(1)} px, hanging feet ${((s.h - RING - a[1]) * kx).toFixed(1)} px below it`);
+    }
+    const r = downscale(s.png, kx, a);
+    Object.assign(s, { png: r.png, w: r.png.width, h: r.png.height });
+    FABINHOGYM_ANCHOR[s.name] = r.anchor;
+  }
+  console.log(`  fabinhogym exercises: × ${kx.toFixed(3)}`);
+  writeAtlas('fabinhogym', 'art-src/characters/fabinho-v2-gym.PNG', [...fabgym, ...g, ...ex], FABINHOGYM_ANCHOR);
   writeUi(fabgym, [['face_laugh', 'fabinhogym_face_laugh'], ['turn_34', 'fabinhogym_turn_34']]);
 }
 
-// The crutch Rafa (level 2), from her own sheet.
-const muleta = slice('art-src/characters/rafaela-muleta.PNG', RAFAMULETA_SHEET);
+// The crutch Rafa (level 2), from her own sheet. Her small row is drawn 1:1; MULETA_H is her standing height in game
+// (px), what the g_ poses and the wedding cast are measured against (this sheet draws her back views smaller than her
+// walk, so back_0 is not used for it).
+const MULETA_H = 180;
+const muleta = slice('art-src/characters/rafa-muleta.PNG', RAFAMULETA_SHEET);
 {
-  // Two faces touch on the sheet: split at the emptiest column of the middle third.
-  const i = muleta.findIndex((s) => s.name === 'face_laugh+grin'), s = muleta[i];
-  let cut = 0, best = Infinity;
-  for (let x = Math.floor(s.w / 3); x < (2 * s.w) / 3; x++) {
-    let n = 0;
-    for (let y = 0; y < s.h; y++) if (s.png.data[(y * s.w + x) * 4 + 3] >= 128) n++;
-    if (n < best) { best = n; cut = x; }
+  // The eight faces touch on the sheet: cut at the emptiest column near each eighth.
+  const FACES = ['face_smile', 'face_laugh', 'face_grin', 'face_soft', 'face_happy', 'face_excited', 'face_shocked', 'face_angry'];
+  const i = muleta.findIndex((s) => s.name === 'faces'), s = muleta[i], step = s.w / FACES.length, cuts = [0];
+  for (let k = 1; k < FACES.length; k++) {
+    let cut = 0, best = Infinity;
+    for (let x = Math.round((k - 0.3) * step); x < (k + 0.3) * step; x++) {
+      let n = 0;
+      for (let y = 0; y < s.h; y++) if (s.png.data[(y * s.w + x) * 4 + 3] >= 128) n++;
+      if (n < best) { best = n; cut = x; }
+    }
+    cuts.push(cut);
   }
+  cuts.push(s.w);
   const part = (x0, x1, name) => {
     const png = new PNG({ width: x1 - x0, height: s.h });
     for (let y = 0; y < s.h; y++) s.png.data.copy(png.data, y * png.width * 4, (y * s.w + x0) * 4, (y * s.w + x1) * 4);
     return { name, png, w: png.width, h: png.height };
   };
-  muleta.splice(i, 1, part(0, cut, 'face_laugh'), part(cut, s.w, 'face_grin'));
+  muleta.splice(i, 1, ...FACES.map((name, k) => part(cuts[k], cuts[k + 1], name)));
 }
 const RAFAMULETA_ANCHOR = standardAnchors(muleta);
-writeAtlas('rafamuleta', 'art-src/characters/rafaela-muleta.PNG', [...muleta,
-  ...gPoses(byName(muleta), RAFAMULETA_ANCHOR, ['pose_idle', 'pose_armsup', 'pose_point', 'pose_phone']),
+writeAtlas('rafamuleta', 'art-src/characters/rafa-muleta.PNG', [...muleta,
+  ...gPoses(byName(muleta), RAFAMULETA_ANCHOR, ['pose_idle', 'pose_armsup', 'pose_point', 'pose_phone'], MULETA_H),
   addGlow(muleta, RAFAMULETA_ANCHOR, 'walk_0')], RAFAMULETA_ANCHOR);
 writeUi(muleta, [['face_smile', 'face_smile'], ['face_laugh', 'face_laugh'], ['face_grin', 'face_grin'],
   ['face_shocked', 'face_shocked'], ['face_angry', 'face_angry'], ['turn_34', 'turn_34'], ['pose_phone', 'phone'],
-  ['dance_0', 'dance']].map(([n, f]) => [n, `rafamuleta_${f}`]));
+  ['dance_4', 'dance']].map(([n, f]) => [n, `rafamuleta_${f}`])); // dance_4: fist up, her victory card
 
 // Taller without a bigger head (these are chibi sprites: height comes from the body). The neck line is the
 // narrowest silhouette row near the face, 25–55% down the figure; above it the frame is copied 1:1 (head, and hands
@@ -704,7 +751,7 @@ function stretchBody(png, [ax, ay], sy, sx) {
 }
 
 const WEDDING = {
-  // Standing heights vs the crutch Rafa (back_0, 180 px): Nathalia 0.95, Giovanni 1.10, Murilo 1.18 (= Fabinho). The
+  // Standing heights vs the crutch Rafa (MULETA_H, 180 px): Nathalia 0.95, Giovanni 1.10, Murilo 1.18 (= Fabinho). The
   // body (below the neck) is stretched so each stands this tall, head kept at scale.
   giovanni: { src: 'art-src/characters/giovanni-sheet.PNG', names: GIOVANNI_SHEET, stretch: { height: 198, widen: 1.06 },
     ui: [['turn_34', 'giovanni'], ['pose_phone', 'giovanni_phone']] },
@@ -738,7 +785,7 @@ for (const [who, c] of Object.entries(WEDDING)) {
     }
     // DOM images (1:1 big rows): the two sheets' big rows are not drawn at the same scale, so each is fitted to Rafa's
     // matching image instead — head kept, body stretched until he stands RATIO × her height there. Faces stay as they are.
-    const MB = byName(muleta), ratio = c.stretch.height / (MB.back_0.h - 2 * RING);
+    const MB = byName(muleta), ratio = c.stretch.height / MULETA_H;
     ui = sprites.map((sp) => {
       if (/^face_/.test(sp.name) || !MB[sp.name] || !c.ui.some(([n]) => n === sp.name)) return sp;
       const her = MB[sp.name], herH = RAFAMULETA_ANCHOR[sp.name][1] - neckRow(her.png, RAFAMULETA_ANCHOR[sp.name]).top;
