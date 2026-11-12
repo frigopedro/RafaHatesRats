@@ -1,0 +1,378 @@
+{
+ "_doc": [
+  "File paths are relative to public/art/ (served at art/...).",
+  "All sizes/positions are art px (1 block = 32 art px); draw everything ×scale with nearest filtering.",
+  "View: 360 art px tall (1080 logical); groundY = 296 is the ground line (top of ground_top) = world y 0. A layer `y` is measured from the view top, so its world y = (y - groundY) × scale. If the view is ever taller than 360, the extra is above: fill it with skyColor.",
+  "Layers are listed back to front. Horizontal: with camLeft = world x of the view left edge in art px (logical / scale), a layer is drawn at screen x = -(camLeft × parallax) mod width, repeated rightwards while tileX; tileX=false layers are drawn once at x = 0 (wide enough for 21:9). Animated layers have `frames` (file = frames[0]).",
+  "Overlays sit inside a layer at each `at` point (x, y) = overlay top-left relative to that layer's top-left, in every tile repeat, drawn right after their layer with the same offset. `frames` maps state → file; `beat` says how to drive them.",
+  "Ground: ground_top (y = groundY) and ground_fill below it (y = groundY + top.height, repeat downward), both tiled by world x (u = worldX mod width). ground.overlays are drawn over ground_top with the same tiling, shown/hidden per their `beat`. No level has holes, so there are no gap pieces.",
+  "Sprites: pivot = anchor point in sprite px (rotation centre for cones). Mounted sprites sit at each mount point of their layer (layer coords, every tile repeat): blend \"normal\" ones are drawn right after that layer, blend \"add\" (additive cones) after all layers and the ground, before hazards and characters. `frames` = animation frames (file = frames[0]). `once` sprites are not mounted: they are placed once in the world (see their note)."
+ ],
+ "scale": 3,
+ "view": {
+  "height": 360,
+  "groundY": 296,
+  "block": 32,
+  "maxWidth": 840
+ },
+ "logo": {
+  "file": "logo.png",
+  "scale": 4,
+  "note": "DOM image, already enlarged; draw at 1:1 CSS (or smaller) with image-rendering: pixelated."
+ },
+ "themes": {
+  "gym": {
+   "title": "Campeonato Gym Rats",
+   "skyColor": "#134a4e",
+   "layers": [
+    {
+     "name": "wall",
+     "file": "bg/gym/wall.png",
+     "width": 960,
+     "height": 296,
+     "y": 0,
+     "parallax": 0.12,
+     "tileX": true
+    },
+    {
+     "name": "machines",
+     "file": "bg/gym/machines.png",
+     "width": 720,
+     "height": 200,
+     "y": 96,
+     "parallax": 0.45,
+     "tileX": true
+    },
+    {
+     "name": "ceiling",
+     "file": "bg/gym/ceiling.png",
+     "width": 192,
+     "height": 40,
+     "y": 0,
+     "parallax": 1,
+     "tileX": true,
+     "note": "Moves with the ground. Truss bottom chord is at y 22-24: hanging punching-bag ropes should end there."
+    }
+   ],
+   "ground": {
+    "top": {
+     "file": "bg/gym/ground_top.png",
+     "width": 128,
+     "height": 32
+    },
+    "fill": {
+     "file": "bg/gym/ground_fill.png",
+     "width": 128,
+     "height": 32
+    },
+    "note": "Tile seams sit every 32 px (one per block); keep u = worldX mod width so they stay on the block grid."
+   },
+   "overlays": [
+    {
+     "name": "neon",
+     "layer": "wall",
+     "at": [
+      [342, 81]
+     ],
+     "width": 104,
+     "height": 32,
+     "frames": {
+      "on": "bg/gym/neon_on.png",
+      "off": "bg/gym/neon_off.png"
+     },
+     "beat": "on for the first half of every beat, off for the second (or on every beat, off on rests)"
+    },
+    {
+     "name": "lamp",
+     "layer": "ceiling",
+     "at": [
+      [24, 28],
+      [120, 28]
+     ],
+     "width": 48,
+     "height": 40,
+     "frames": {
+      "lit": "bg/gym/lamp_lit.png",
+      "dim": "bg/gym/lamp_dim.png"
+     },
+     "beat": "lit for ~0.3 beat after each beat, then dim (both lamps together); under Gelol alternate the two anchors"
+    }
+   ],
+   "sprites": []
+  },
+  "church": {
+   "title": "A Madrinha",
+   "skyColor": "#4a3a36",
+   "layers": [
+    {
+     "name": "nave",
+     "file": "bg/church/nave.png",
+     "width": 960,
+     "height": 296,
+     "y": 0,
+     "parallax": 0.15,
+     "tileX": true
+    },
+    {
+     "name": "pews",
+     "file": "bg/church/pews.png",
+     "width": 720,
+     "height": 110,
+     "y": 186,
+     "parallax": 0.5,
+     "tileX": true
+    },
+    {
+     "name": "ceiling",
+     "file": "bg/church/ceiling.png",
+     "width": 384,
+     "height": 72,
+     "y": 0,
+     "parallax": 1,
+     "tileX": true,
+     "note": "Moves with the ground. Hanging lanterns: chains start at the ceiling beam bottom, y 16. Hymn books (drop) fall from the choir gallery rail at y 48."
+    }
+   ],
+   "ground": {
+    "top": {
+     "file": "bg/church/ground_top.png",
+     "width": 128,
+     "height": 32
+    },
+    "fill": {
+     "file": "bg/church/ground_fill.png",
+     "width": 128,
+     "height": 32
+    },
+    "note": "Tile seams sit every 32 px (one per block); keep u = worldX mod width so they stay on the block grid."
+   },
+   "overlays": [
+    {
+     "name": "windows_a",
+     "layer": "nave",
+     "at": [
+      [0, 0]
+     ],
+     "width": 960,
+     "height": 296,
+     "frames": {
+      "lit": "bg/church/windows_a_lit.png"
+     },
+     "beat": "set A (bays 1 and 3): draw on even beats, hide on odd"
+    },
+    {
+     "name": "windows_b",
+     "layer": "nave",
+     "at": [
+      [0, 0]
+     ],
+     "width": 960,
+     "height": 296,
+     "frames": {
+      "lit": "bg/church/windows_b_lit.png"
+     },
+     "beat": "set B (bays 2 and 4): draw on odd beats, hide on even"
+    },
+    {
+     "name": "flame",
+     "layer": "pews",
+     "at": [
+      [122, 27],
+      [362, 27],
+      [602, 27]
+     ],
+     "width": 9,
+     "height": 13,
+     "frames": {
+      "a": "bg/church/flame_a.png",
+      "b": "bg/church/flame_b.png"
+     },
+     "beat": "flicker: swap a/b every half beat"
+    }
+   ],
+   "sprites": [
+    {
+     "name": "altar",
+     "file": "bg/church/altar.png",
+     "width": 256,
+     "height": 232,
+     "pivot": {
+      "x": 0,
+      "y": 222
+     },
+     "blend": "normal",
+     "once": true,
+     "spots": {
+      "rafa": {
+       "x": 12,
+       "y": 222
+      },
+      "bride": {
+       "x": 62,
+       "y": 222
+      },
+      "groom": {
+       "x": 92,
+       "y": 222
+      }
+     },
+     "note": "Finish-line set piece, placed once with its pivot (left end, ground line) on the ground at the level end; drawn after the ground, before characters. The bottom 10 rows lie on the floor surface. spots = feet positions (sprite px, on the ground line) for Rafa, the bride and the groom; drawn without people."
+    }
+   ]
+  },
+  "party": {
+   "title": "A Festa",
+   "skyColor": "#140e22",
+   "layers": [
+    {
+     "name": "hall",
+     "file": "bg/party/hall.png",
+     "width": 960,
+     "height": 296,
+     "y": 0,
+     "parallax": 0.1,
+     "tileX": true
+    },
+    {
+     "name": "guests",
+     "file": "bg/party/guests_0.png",
+     "frames": [
+      "bg/party/guests_0.png",
+      "bg/party/guests_1.png"
+     ],
+     "beat": "frame 1 (bounce) for ~0.25 beat on every beat, frame 0 otherwise",
+     "width": 720,
+     "height": 130,
+     "y": 166,
+     "parallax": 0.45,
+     "tileX": true
+    },
+    {
+     "name": "rig",
+     "file": "bg/party/rig.png",
+     "width": 960,
+     "height": 46,
+     "y": 0,
+     "parallax": 0.7,
+     "tileX": true
+    }
+   ],
+   "ground": {
+    "top": {
+     "file": "bg/party/ground_top.png",
+     "width": 64,
+     "height": 32
+    },
+    "fill": {
+     "file": "bg/party/ground_fill.png",
+     "width": 64,
+     "height": 32
+    },
+    "overlays": [
+     {
+      "name": "floor_a",
+      "file": "bg/party/floor_a.png",
+      "width": 64,
+      "height": 32,
+      "beat": "set A tiles (magenta): draw on even beats"
+     },
+     {
+      "name": "floor_b",
+      "file": "bg/party/floor_b.png",
+      "width": 64,
+      "height": 32,
+      "beat": "set B tiles (cyan): draw on odd beats"
+     }
+    ],
+    "note": "Tile seams sit every 32 px (one per block); keep u = worldX mod width so they stay on the block grid."
+   },
+   "overlays": [],
+   "sprites": [
+    {
+     "name": "disco_ball",
+     "file": "bg/party/disco_ball_0.png",
+     "width": 28,
+     "height": 44,
+     "frames": [
+      "bg/party/disco_ball_0.png",
+      "bg/party/disco_ball_1.png",
+      "bg/party/disco_ball_2.png"
+     ],
+     "pivot": {
+      "x": 14,
+      "y": 0
+     },
+     "blend": "normal",
+     "mount": {
+      "layer": "rig",
+      "points": [
+       [480, 22]
+      ]
+     },
+     "beat": "cycle frames 0→1→2 once per beat (sparkle)",
+     "note": "Hangs from the truss bottom chord; drawn right after the rig layer."
+    },
+    {
+     "name": "spot_magenta",
+     "file": "bg/party/spot_magenta.png",
+     "width": 120,
+     "height": 300,
+     "pivot": {
+      "x": 60,
+      "y": 0
+     },
+     "blend": "add",
+     "mount": {
+      "layer": "rig",
+      "points": [
+       [80, 41],
+       [560, 41]
+      ]
+     },
+     "beat": "swing ±25° about the pivot with the beat; neighbouring colours swing opposite",
+     "note": "Draw after all layers and the ground, before hazards and characters."
+    },
+    {
+     "name": "spot_cyan",
+     "file": "bg/party/spot_cyan.png",
+     "width": 120,
+     "height": 300,
+     "pivot": {
+      "x": 60,
+      "y": 0
+     },
+     "blend": "add",
+     "mount": {
+      "layer": "rig",
+      "points": [
+       [240, 41],
+       [720, 41]
+      ]
+     },
+     "beat": "swing ±25° about the pivot with the beat; neighbouring colours swing opposite",
+     "note": "Draw after all layers and the ground, before hazards and characters."
+    },
+    {
+     "name": "spot_gold",
+     "file": "bg/party/spot_gold.png",
+     "width": 120,
+     "height": 300,
+     "pivot": {
+      "x": 60,
+      "y": 0
+     },
+     "blend": "add",
+     "mount": {
+      "layer": "rig",
+      "points": [
+       [400, 41],
+       [880, 41]
+      ]
+     },
+     "beat": "swing ±25° about the pivot with the beat; neighbouring colours swing opposite",
+     "note": "Draw after all layers and the ground, before hazards and characters."
+    }
+   ]
+  }
+ }
+}

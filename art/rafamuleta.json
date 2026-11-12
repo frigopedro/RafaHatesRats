@@ -1,0 +1,421 @@
+{
+ "frames": {
+  "crutch_0": {
+   "frame": {
+    "x": 1380,
+    "y": 2,
+    "w": 106,
+    "h": 169
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 106,
+    "h": 169
+   },
+   "sourceSize": {
+    "w": 106,
+    "h": 169
+   },
+   "anchor": {
+    "x": 0.7169811320754716,
+    "y": 0.9881656804733728
+   }
+  },
+  "crutch_1": {
+   "frame": {
+    "x": 1488,
+    "y": 2,
+    "w": 107,
+    "h": 169
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 107,
+    "h": 169
+   },
+   "sourceSize": {
+    "w": 107,
+    "h": 169
+   },
+   "anchor": {
+    "x": 0.7476635514018691,
+    "y": 0.9881656804733728
+   }
+  },
+  "crutch_2": {
+   "frame": {
+    "x": 1597,
+    "y": 2,
+    "w": 109,
+    "h": 169
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 109,
+    "h": 169
+   },
+   "sourceSize": {
+    "w": 109,
+    "h": 169
+   },
+   "anchor": {
+    "x": 0.7522935779816514,
+    "y": 0.9881656804733728
+   }
+  },
+  "crutch_3": {
+   "frame": {
+    "x": 1708,
+    "y": 2,
+    "w": 104,
+    "h": 169
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 104,
+    "h": 169
+   },
+   "sourceSize": {
+    "w": 104,
+    "h": 169
+   },
+   "anchor": {
+    "x": 0.75,
+    "y": 0.9881656804733728
+   }
+  },
+  "walk_0": {
+   "frame": {
+    "x": 1276,
+    "y": 2,
+    "w": 102,
+    "h": 173
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 102,
+    "h": 173
+   },
+   "sourceSize": {
+    "w": 102,
+    "h": 173
+   },
+   "anchor": {
+    "x": 0.6274509803921569,
+    "y": 0.9884393063583815
+   }
+  },
+  "walk_1": {
+   "frame": {
+    "x": 1079,
+    "y": 2,
+    "w": 100,
+    "h": 175
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 100,
+    "h": 175
+   },
+   "sourceSize": {
+    "w": 100,
+    "h": 175
+   },
+   "anchor": {
+    "x": 0.62,
+    "y": 0.9885714285714285
+   }
+  },
+  "walk_2": {
+   "frame": {
+    "x": 1181,
+    "y": 2,
+    "w": 93,
+    "h": 175
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 93,
+    "h": 175
+   },
+   "sourceSize": {
+    "w": 93,
+    "h": 175
+   },
+   "anchor": {
+    "x": 0.6451612903225806,
+    "y": 0.9885714285714285
+   }
+  },
+  "walk_3": {
+   "frame": {
+    "x": 982,
+    "y": 2,
+    "w": 95,
+    "h": 176
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 95,
+    "h": 176
+   },
+   "sourceSize": {
+    "w": 95,
+    "h": 176
+   },
+   "anchor": {
+    "x": 0.5789473684210527,
+    "y": 0.9886363636363636
+   }
+  },
+  "dance_0": {
+   "frame": {
+    "x": 352,
+    "y": 2,
+    "w": 106,
+    "h": 184
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 106,
+    "h": 184
+   },
+   "sourceSize": {
+    "w": 106,
+    "h": 184
+   },
+   "anchor": {
+    "x": 0.5,
+    "y": 0.9891304347826086
+   }
+  },
+  "dance_1": {
+   "frame": {
+    "x": 460,
+    "y": 2,
+    "w": 101,
+    "h": 184
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 101,
+    "h": 184
+   },
+   "sourceSize": {
+    "w": 101,
+    "h": 184
+   },
+   "anchor": {
+    "x": 0.5841584158415841,
+    "y": 0.9891304347826086
+   }
+  },
+  "dance_2": {
+   "frame": {
+    "x": 653,
+    "y": 2,
+    "w": 105,
+    "h": 183
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 105,
+    "h": 183
+   },
+   "sourceSize": {
+    "w": 105,
+    "h": 183
+   },
+   "anchor": {
+    "x": 0.41904761904761906,
+    "y": 0.9890710382513661
+   }
+  },
+  "dance_3": {
+   "frame": {
+    "x": 760,
+    "y": 2,
+    "w": 102,
+    "h": 182
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 102,
+    "h": 182
+   },
+   "sourceSize": {
+    "w": 102,
+    "h": 182
+   },
+   "anchor": {
+    "x": 0.6176470588235294,
+    "y": 0.989010989010989
+   }
+  },
+  "dance_4": {
+   "frame": {
+    "x": 249,
+    "y": 2,
+    "w": 101,
+    "h": 186
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 101,
+    "h": 186
+   },
+   "sourceSize": {
+    "w": 101,
+    "h": 186
+   },
+   "anchor": {
+    "x": 0.5445544554455446,
+    "y": 0.989247311827957
+   }
+  },
+  "g_pose_idle": {
+   "frame": {
+    "x": 563,
+    "y": 2,
+    "w": 88,
+    "h": 184
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 88,
+    "h": 184
+   },
+   "sourceSize": {
+    "w": 88,
+    "h": 184
+   },
+   "anchor": {
+    "x": 0.5113636363636364,
+    "y": 0.9891304347826086
+   }
+  },
+  "g_pose_armsup": {
+   "frame": {
+    "x": 142,
+    "y": 2,
+    "w": 105,
+    "h": 188
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 105,
+    "h": 188
+   },
+   "sourceSize": {
+    "w": 105,
+    "h": 188
+   },
+   "anchor": {
+    "x": 0.5142857142857142,
+    "y": 0.9893617021276596
+   }
+  },
+  "g_pose_point": {
+   "frame": {
+    "x": 864,
+    "y": 2,
+    "w": 116,
+    "h": 182
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 116,
+    "h": 182
+   },
+   "sourceSize": {
+    "w": 116,
+    "h": 182
+   },
+   "anchor": {
+    "x": 0.47413793103448276,
+    "y": 0.989010989010989
+   }
+  },
+  "glow": {
+   "frame": {
+    "x": 2,
+    "y": 2,
+    "w": 138,
+    "h": 209
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 138,
+    "h": 209
+   },
+   "sourceSize": {
+    "w": 138,
+    "h": 209
+   },
+   "anchor": {
+    "x": 0.5942028985507246,
+    "y": 0.9043062200956937
+   }
+  }
+ },
+ "meta": {
+  "image": "rafamuleta.png",
+  "size": {
+   "w": 1814,
+   "h": 213
+  },
+  "scale": "1",
+  "source": "art-src/characters/rafa-muleta.PNG"
+ }
+}

@@ -1,0 +1,205 @@
+{
+ "frames": {
+  "g_run_0": {
+   "frame": {
+    "x": 2,
+    "y": 2,
+    "w": 128,
+    "h": 178
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 128,
+    "h": 178
+   },
+   "sourceSize": {
+    "w": 128,
+    "h": 178
+   },
+   "anchor": {
+    "x": 0.796875,
+    "y": 0.9831460674157303
+   }
+  },
+  "g_run_1": {
+   "frame": {
+    "x": 132,
+    "y": 2,
+    "w": 119,
+    "h": 176
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 119,
+    "h": 176
+   },
+   "sourceSize": {
+    "w": 119,
+    "h": 176
+   },
+   "anchor": {
+    "x": 0.8067226890756303,
+    "y": 0.9829545454545454
+   }
+  },
+  "g_run_2": {
+   "frame": {
+    "x": 714,
+    "y": 2,
+    "w": 119,
+    "h": 172
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 119,
+    "h": 172
+   },
+   "sourceSize": {
+    "w": 119,
+    "h": 172
+   },
+   "anchor": {
+    "x": 0.8067226890756303,
+    "y": 0.9825581395348837
+   }
+  },
+  "g_run_3": {
+   "frame": {
+    "x": 367,
+    "y": 2,
+    "w": 116,
+    "h": 174
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 116,
+    "h": 174
+   },
+   "sourceSize": {
+    "w": 116,
+    "h": 174
+   },
+   "anchor": {
+    "x": 0.8189655172413793,
+    "y": 0.9827586206896551
+   }
+  },
+  "g_run_4": {
+   "frame": {
+    "x": 485,
+    "y": 2,
+    "w": 115,
+    "h": 173
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 115,
+    "h": 173
+   },
+   "sourceSize": {
+    "w": 115,
+    "h": 173
+   },
+   "anchor": {
+    "x": 0.8173913043478261,
+    "y": 0.9826589595375722
+   }
+  },
+  "g_pose_idle": {
+   "frame": {
+    "x": 253,
+    "y": 2,
+    "w": 112,
+    "h": 175
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 112,
+    "h": 175
+   },
+   "sourceSize": {
+    "w": 112,
+    "h": 175
+   },
+   "anchor": {
+    "x": 0.5535714285714286,
+    "y": 0.9828571428571429
+   }
+  },
+  "g_pose_armsup": {
+   "frame": {
+    "x": 835,
+    "y": 2,
+    "w": 113,
+    "h": 169
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 113,
+    "h": 169
+   },
+   "sourceSize": {
+    "w": 113,
+    "h": 169
+   },
+   "anchor": {
+    "x": 0.5221238938053098,
+    "y": 0.9822485207100592
+   }
+  },
+  "g_pose_laugh": {
+   "frame": {
+    "x": 602,
+    "y": 2,
+    "w": 110,
+    "h": 173
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 110,
+    "h": 173
+   },
+   "sourceSize": {
+    "w": 110,
+    "h": 173
+   },
+   "anchor": {
+    "x": 0.5636363636363636,
+    "y": 0.9826589595375722
+   }
+  }
+ },
+ "meta": {
+  "image": "nathalia.png",
+  "size": {
+   "w": 950,
+   "h": 182
+  },
+  "scale": "1",
+  "source": "art-src/characters/nathalia-sheet.PNG"
+ }
+}
