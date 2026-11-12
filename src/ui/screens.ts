@@ -174,7 +174,7 @@ const FLIP: Record<string, number> = { neon: 1, windows_a: 2, windows_b: 2, gues
 
 function fillScenes(): void {
   if (!bg) return;
-  const u = (f: string) => `url(art/${f})`;
+  const u = (f: string) => `url('${new URL(`art/${f}`, document.baseURI).href}')`; // absolute: ui.css (in assets/) consumes these; ' not " (inside style="")
   for (const el of layer.querySelectorAll<HTMLElement>('.scene:empty')) {
     const t = bg.themes[el.dataset.theme as Theme];
     if (!t) continue;
