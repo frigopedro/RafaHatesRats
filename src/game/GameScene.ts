@@ -206,7 +206,8 @@ export class GameScene extends Phaser.Scene implements GameControl {
     const edges = this.o.input.take();
     if (this.phase === 'run' && !this.paused) {
       const clock = this.o.clock;
-      if (!this.o.bot) for (const e of edges) this.pending.push({ tick: Math.ceil(clock.beat(e.time) * TPB), down: e.down });
+      // Event timeStamps are not guaranteed to share performance.now()'s base: clamp to the last 100 ms.
+      if (!this.o.bot) for (const e of edges) this.pending.push({ tick: Math.ceil(clock.beat(Math.min(now, Math.max(now - 100, e.time))) * TPB), down: e.down });
       let exact = clock.beat(now) * TPB;
       if (exact - this.s.tick > MAX_BEHIND) {
         // Advance one capped step and drop the rest: a hitch never fast-forwards, and a device that is slow every

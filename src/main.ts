@@ -38,7 +38,7 @@ const volumes = (s: Settings) => (audio.setMusicVolume(s.music / 100), audio.set
 volumes(getSettings());
 onSettings(volumes);
 const gameEl = document.getElementById('game')!;
-ui.init(document.getElementById('ui')!, () => pause(true), audio.ui);
+ui.init(document.getElementById('ui')!, () => pause(true), (n) => safe(() => audio.ui(n)));
 const portrait = matchMedia('(orientation: portrait) and (pointer: coarse)');
 
 let def: LevelDef | null = null;
