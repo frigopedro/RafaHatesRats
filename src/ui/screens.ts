@@ -12,19 +12,19 @@ type Acts = Record<string, () => void>;
  *  `boss`: the bossEnter cue brings a boss (angry face); otherwise it is the church's dash to the altar.
  *  Each level has its own Rafa: `faces` (HUD, game over), `phone` (pause), `winImg` / `win2Img` (victory). */
 export const CARDS = [
-  { id: 'gym', name: 'Campeonato Gym Rats', kit: 'rafagym_turn_34.png', kitPx: false, sub: 'Chefe: Fabinho', side: 'fabinhogym_turn_34.png', sideFb: 'fabinho_armscrossed.png', sidePx: false, boss: true,
-    faces: 'rafagym_face_', noSad: false, phone: 'rafagym_phone.png', win: '1º LUGAR!', winImg: 'rafagym_armsup.png', winPx: false, win2: '…e um LCA a menos.', win2Img: 'rafagym_knee.png' },
-  { id: 'church', name: 'A Madrinha', kit: 'rafamuleta_turn_34.png', kitPx: false, sub: 'Missão: chegar ao altar', side: 'giovanni.png', sideFb: undefined, sidePx: false, boss: false, flank: ['nathalia_turn_34.png', 'murilo_turn_34.png'],
-    faces: 'rafamuleta_face_', noSad: true, phone: 'rafamuleta_phone.png', win: 'CHEGOU A TEMPO, MADRINHA!', winImg: 'rafamuleta_dance.png', winPx: false, win2: '', win2Img: '' },
-  { id: 'party', name: 'A Festa', kit: 'rafa_turn_34.png', kitPx: false, sub: 'Chefe: O Aranha da Carreta', side: 'aranha_pose1.png', sideFb: undefined, sidePx: true, boss: true,
-    faces: 'rafa_face_', noSad: false, phone: 'rafa_pose_phone.png', win: 'FIM! Rafa ainda odeia ratos.', winImg: 'rafa_pose_armsup.png', winPx: false, win2: '', win2Img: '' },
+  { id: 'gym', name: 'Campeonato Gym Rats', kit: 'rafagym_turn_34.png', sub: 'Chefe: Fabinho', side: 'fabinhogym_turn_34.png', sidePx: false, boss: true,
+    faces: 'rafagym_face_', noSad: false, phone: 'rafagym_phone.png', win: '1º LUGAR!', winImg: 'rafagym_armsup.png', win2: '…e um LCA a menos.', win2Img: 'rafagym_knee.png' },
+  { id: 'church', name: 'A Madrinha', kit: 'rafamuleta_turn_34.png', sub: 'Missão: chegar ao altar', side: 'giovanni.png', sidePx: false, boss: false, flank: ['nathalia_turn_34.png', 'murilo_turn_34.png'],
+    faces: 'rafamuleta_face_', noSad: true, phone: 'rafamuleta_phone.png', win: 'CHEGOU A TEMPO, MADRINHA!', winImg: 'rafamuleta_dance.png', win2: '', win2Img: '' },
+  { id: 'party', name: 'A Festa', kit: 'rafa_turn_34.png', sub: 'Chefe: O Aranha da Carreta', side: 'aranha_pose1.png', sidePx: true, boss: true,
+    faces: 'rafa_face_', noSad: false, phone: 'rafa_pose_phone.png', win: 'FIM! Rafa ainda odeia ratos.', winImg: 'rafa_pose_armsup.png', win2: '', win2Img: '' },
 ];
 export type Card = (typeof CARDS)[number];
 
 // Drawn heights relative to standing Rafa (sheets aren't drawn to a common scale); unlisted images (faces) = 1.
 const RATIO: Record<string, number> = {
   'rafagym_turn_34.png': 1, 'rafamuleta_turn_34.png': 1, 'rafamuleta_dance.png': 1, 'rafa_turn_34.png': 0.84,
-  'fabinhogym_turn_34.png': 0.88, 'fabinho_armscrossed.png': 0.88, 'giovanni.png': 1.18, 'aranha_pose1.png': 0.7,
+  'fabinhogym_turn_34.png': 0.88, 'giovanni.png': 1.18, 'aranha_pose1.png': 0.7,
   'aranha_pose2.png': 0.8, 'nathalia_turn_34.png': 0.95, 'murilo_turn_34.png': 1.06,
 };
 const ratioOf = (src: string) => RATIO[src.slice(src.lastIndexOf('/') + 1)] ?? 1;
@@ -62,9 +62,8 @@ export const coinTotal = (d: LevelDef) => d.chart.filter((e) => e.t === 'item' &
 const FACES = ['smile', 'laugh', 'grin', 'shocked', 'sad', 'angry'] as const;
 type Face = (typeof FACES)[number];
 const esc = (s: string) => s.replace(/[&<>"]/g, (c) => `&#${c.charCodeAt(0)};`);
-/** `fb` = fallback image (used by the kit Rafas, which arrive later); `px` = crisp enlarged pixel art. */
-const img = (name: string, cls = '', alt = '', fb?: string) =>
-  `<img src="art/ui/${name}" class="${cls}" alt="${alt}"${fb ? ` data-fb="art/ui/${fb}"` : ''} draggable="false">`;
+/** An art/ui image; class `px` = crisp enlarged pixel art. */
+const img = (name: string, cls = '', alt = '') => `<img src="art/ui/${name}" class="${cls}" alt="${alt}" draggable="false">`;
 
 let root: HTMLElement, layer: HTMLElement, live: HTMLElement;
 let acts: Acts = {};
@@ -198,7 +197,7 @@ export function fases(a: { voltar(): void; play(d: LevelDef): void }): void {
       <button class="card" data-act="lv-${c.id}"${def ? '' : ' disabled'}>
         <span class="card-n">FASE ${i + 1}</span>
         <span class="card-title">${esc(def?.name ?? c.name)}</span>
-        <span class="card-art fig overlap">${img(c.kit, `kit${c.kitPx ? ' px' : ''}`, '', c.kitPx ? 'rafa_turn_34.png' : undefined)}${img(c.side, `boss${c.sidePx ? ' px' : ''}`, '', c.sideFb)}</span>
+        <span class="card-art fig overlap">${img(c.kit, 'kit')}${img(c.side, `boss${c.sidePx ? ' px' : ''}`)}</span>
         <span class="card-boss">${c.sub}</span>
         ${stats}${badge}
       </button>`;
@@ -274,7 +273,7 @@ export function gameOver(o: OverInfo, a: { retry(): void; menu(): void }): void 
   show('dim center over', `
     <button class="btn small sage corner" data-act="menu">MENU</button>
     <div class="panel over-card" tabindex="-1">
-      <div class="over-art${faces ? ' fig' : ''}">${img(`${facesOf(o.def)}${c.face === 'sad' && cardOf(o.def)?.noSad ? 'shocked' : c.face}.png`, 'over-face', '')}${c.boss ? img(c.boss, `over-boss${c.px ? ' px' : ''}${faces ? '' : ' figure'}`, '', c.fb) : ''}</div>
+      <div class="over-art${faces ? ' fig' : ''}">${img(`${facesOf(o.def)}${c.face === 'sad' && cardOf(o.def)?.noSad ? 'shocked' : c.face}.png`, 'over-face', '')}${c.boss ? img(c.boss, `over-boss${c.px ? ' px' : ''}${faces ? '' : ' figure'}`) : ''}</div>
       <div class="over-text">
         <p class="joke">${c.line}</p>
         <p class="score"><b>${o.pct}%</b> ${o.record ? '<span class="rec">NOVO RECORDE!</span>' : `<span>Recorde ${o.best}%</span>`}</p>
@@ -296,7 +295,7 @@ export function victory(w: WinInfo, a: { next(): void; repetir(): void; menu(): 
   const next = w.last ? '' : w.next ? '<button class="btn big" data-act="next">PRÓXIMA FASE</button>' : '<button class="btn" disabled>PRÓXIMA FASE · EM BREVE</button>';
   // gym: a beat after "1º LUGAR!" the knee goes — the second line and the knee-hugging Rafa appear on the beat.
   const beat = `--beat:${Math.round(60000 / w.def.bpm)}ms`;
-  const c = w.card, win = img(c?.winImg ?? 'rafa_pose_armsup.png', `hero small${c?.winPx ? ' px' : ''}`, 'Rafa comemorando');
+  const c = w.card, win = img(c?.winImg ?? 'rafa_pose_armsup.png', 'hero small', 'Rafa comemorando');
   const art = c?.win2
     ? `<div class="vit-art" style="${beat}">${win.replace('hero small', 'hero small then-hide')}${img(c.win2Img, 'hero small then-show', 'Rafa abraçando o joelho')}</div>`
     : c?.flank // church: the couple beside her at the altar (each hides itself until its art exists)

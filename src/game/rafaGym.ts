@@ -20,7 +20,7 @@ const FAR_TINT = 0xdadada; // far leg ~15% darker
 // the lift fades out over the last 48 px of the fall so the feet meet the floor.
 const AIR_LIFT: Record<string, number> = { leap: 19, leap_up: 16 };
 
-// --- run rig (reused by fabinhoGym.ts): one full cycle (two foot strikes, on the beat and the half-beat) per beat ---
+// --- run rig: one full cycle (two foot strikes, on the beat and the half-beat) per beat ---
 const GROUND = 4 * VIEW.block; // px the floor moves per beat (blocks per beat × block)
 /** Per-character proportions of the run, px: hip height range above the floor (lowest mid-stance, highest mid-flight —
  *  two rises per cycle), how far the planted foot lands ahead of the hip (and leaves behind it), ankle above the sole. */
@@ -93,17 +93,8 @@ export function runPhase(s: Pick<RafaState, 'overdriveFrom' | 'overdriveUntil'>,
   return beat + (GELOL_RUN - 1) * Math.min(Math.max(beat - s.overdriveFrom, 0), s.overdriveUntil - s.overdriveFrom);
 }
 
-/** Where a foot strikes, px ahead of her hitbox centre (HEAD_DX + the rig's hip offset −13 + REACH); it then stays put
- *  in world space while she runs over it. */
-export const GYM_STRIKE_DX = HEAD_DX - 13 + RAFA_GAIT.reach;
-
-/** True if a foot struck the floor between two render beats (for dust puffs): strikes are on every half cycle. */
-export function gymStrike(s: Pick<RafaState, 'overdriveFrom' | 'overdriveUntil'>, prevBeat: number, beat: number): boolean {
-  return Math.floor(runPhase(s, beat) * 2) !== Math.floor(runPhase(s, prevBeat) * 2);
-}
-
-// Rig parts, back to front: far shoe, shin, thigh · hip filler · near shoe, shin, thigh · upper body. Every rig atlas
-// (rafagym, fabinhogym) has these frames; thigh/shin carry their `bone`, run_upper its hip offset from the origin.
+// Rig parts, back to front: far shoe, shin, thigh · hip filler · near shoe, shin, thigh · upper body (rafagym atlas);
+// thigh/shin carry their `bone`, run_upper its hip offset from the origin.
 const RIG_FRAMES = ['shoe', 'shin_far', 'thigh_far', 'pelvis', 'shoe', 'shin', 'thigh', 'run_upper'];
 type Bone = { len: number; angle: number };
 const custom = <T>(img: Phaser.GameObjects.Image, key: string) => (img.frame.customData as Record<string, T>)[key];

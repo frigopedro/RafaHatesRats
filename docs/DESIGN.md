@@ -45,7 +45,7 @@ Hazard kinds below are the `HazardKind` names and the art frame names (`HAZARDS[
 ### Level 1 — gym (art exists)
 Small: `dumbbell`, `kettlebell`, `bottle`, `rat` (scurrying toward her — the title's payoff, this level only), `plate`, `ropeWave`. Big: `treadmill`, `bench`, `plateRack`, `barbellRack`, `plyo`. High: `bag` (hanging punching bag).
 
-**Boss: Fabinho** — a boy in a black suit and red tie, from the user's sheet. He runs just ahead of Rafa, trying to out-train her. A boss is a cosmetic actor driven by chart cues; his attacks are ordinary hazards.
+**Boss: Fabinho** — a boy in a black T-shirt, shorts and sneakers, from the user's gym sheet (`fabinho-v2-gym.PNG`). He runs just ahead of Rafa, trying to out-train her. A boss is a cosmetic actor driven by chart cues; his attacks are ordinary hazards.
 
 | Attack | Hazard | Player does |
 |---|---|---|
@@ -93,7 +93,7 @@ Optional platforms: low stage risers (`plat_stage`).
 | Sheet | Status | Gives |
 |---|---|---|
 | `rafa-sheet.png` | sliced → `public/art/rafa.*` | Wheelchair Rafa: push cycle with spinning wheels, idle, jump, arms-up, pointing, crash; 8 faces for HUD and cards; menu poses |
-| `fabinho-sheet.png` | sliced → `public/art/fabinho.*` | Run, leap, land, throw, push-ups, sit-ups, idle, defeated, sulk; faces |
+| `fabinho-sheet.png` | not sliced (the suit Fabinho is not in the game) | Run, leap, land, throw, push-ups, sit-ups, idle, defeated, sulk; faces |
 | `rafa-sheet-gym.PNG` | present (45 sprites) → `public/art/rafagym.*`, view `src/game/rafaGym.ts` | Level-1 Rafa: black gym clothes and **glasses**. Run ×5, walk ×5, jump sequence, landing, arms-up cheer, squats, push-ups, stretches, sitting hugging her knees (the level-1 ending), 6 faces with glasses for the level-1 HUD and cards |
 | `fabinho-v2-gym.PNG` | present (35 sprites) → `public/art/fabinhogym.*`, tables `FABINHOGYM` | The level-1 boss: Fabinho in a black T-shirt, shorts and sneakers. Replaces the earlier `fabinho-gym.PNG`. No push-up or lying poses: his taunts are laughing, arms crossed, checking his phone. The suit Fabinho is his wedding look |
 | `rafaela-muleta.PNG` | present (39) → `public/art/rafamuleta.*`, view `src/game/rafaMuleta.ts` | Level-2 Rafa: two crutches, short brown dress, knee brace. Replaces the derived crutch rig. Includes five dance poses used for her win |
@@ -137,7 +137,7 @@ src/game/                    clock, createGame, GameScene, input, rafaView (whee
 src/art/sheets.ts            animation tables for sheet characters
 src/audio/                   engine, voices, sequencer, songs, sfx
 src/ui/, src/save.ts         screens and persistence
-scripts/slice-sheet.mjs      user sheets → atlases + DOM images
+scripts/slice-sheet.mjs      user sheets → atlases (only the frames in its KEEP lists) + DOM images
 scripts/bake-*.mjs           code-drawn art → atlases (libs: art-src/props/px.mjs, art-src/bg/lib.mjs, art-src/bosses/raster.mjs)
 scripts/shots*.mjs           Playwright screenshot runs (bot, UI, gallery)
 ```

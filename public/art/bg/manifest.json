@@ -18,9 +18,7 @@
  "logo": {
   "file": "logo.png",
   "scale": 4,
-  "small": "bg/logo_small.png",
-  "smallScale": 2,
-  "note": "DOM images, already enlarged; draw at 1:1 CSS (or smaller) with image-rendering: pixelated."
+  "note": "DOM image, already enlarged; draw at 1:1 CSS (or smaller) with image-rendering: pixelated."
  },
  "themes": {
   "gym": {

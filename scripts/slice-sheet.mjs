@@ -30,27 +30,6 @@ const RAFA = [
   ['part_chair_back', [1370, 879, 68, 87]], ['part_brake', [1479, 887, 14, 28]], ['part_bracket', [1479, 932, 29, 28]],
 ];
 
-const FABINHO = [
-  ['turn_front', [58, 6, 97, 238]], ['turn_front2', [226, 6, 100, 238]], ['turn_34', [392, 6, 94, 239]],
-  ['turn_side', [567, 7, 79, 238]], ['turn_back', [722, 8, 92, 236]], ['turn_back2', [872, 8, 102, 237]],
-  ['walk_0', [1042, 14, 115, 231]], ['walk_1', [1187, 11, 124, 234]], ['walk_2', [1336, 14, 120, 229]],
-  ['run_0', [36, 278, 148, 201]], ['run_1', [196, 272, 161, 187]], ['run_2', [359, 274, 183, 200]],
-  ['run_3', [552, 274, 172, 196]], ['run_4', [719, 277, 169, 197]],
-  ['leap_0', [903, 270, 146, 215]], ['leap_1', [1065, 265, 129, 209]], ['crouch', [1235, 325, 133, 155]],
-  ['halfsquat', [1412, 268, 108, 211]],
-  ['pushup_0', [23, 542, 197, 127]], ['pushup_1', [241, 534, 213, 137]], ['squat', [490, 507, 128, 162]],
-  ['lunge', [624, 511, 177, 162]], ['situp_0', [869, 566, 154, 107]], ['situp_1', [1035, 571, 186, 102]],
-  ['stretch_side', [1238, 497, 107, 176]], ['stretch_leg', [1364, 532, 157, 153]],
-  ['wave', [32, 687, 114, 168]], ['thumb_up', [193, 689, 111, 166]], ['thumb_side', [338, 691, 112, 165]],
-  ['armscrossed', [490, 693, 85, 165]], ['thinking', [624, 691, 81, 167]], ['drinking', [756, 701, 106, 157]],
-  ['phone', [897, 710, 97, 148]], ['point', [1032, 701, 127, 157]], ['kneel_0', [1186, 725, 106, 141]],
-  ['kneel_1', [1357, 728, 134, 141]],
-  ['face_laugh', [27, 868, 102, 127]], ['face_laugh2', [162, 871, 104, 124]], ['face_laugh3', [299, 870, 101, 125]],
-  ['face_laugh4', [429, 870, 104, 125]], ['face_smile', [561, 870, 103, 125]], ['face_shocked', [693, 871, 100, 124]],
-  ['face_shocked2', [817, 869, 104, 126]], ['face_angry', [945, 871, 103, 124]], ['face_angry2', [1073, 871, 102, 124]],
-  ['defeated', [1207, 933, 162, 68]], ['sulk', [1392, 888, 125, 117]],
-];
-
 // Gym Rafa (level 1). Names starting with '_' are cut but left out of the atlas (the asleep pose's little "Z").
 const RAFAGYM = [
   ['turn_front', [25, 16, 108, 257]], ['turn_34', [176, 18, 111, 255]], ['turn_side', [325, 14, 108, 257]],
@@ -162,15 +141,29 @@ const RAFA_ANCHOR = {
   push_0: [36, 178], push_1: [36, 180], push_2: [36, 185], push_3: [39, 185], push_4: [46, 178],
   side_0: [36, 188], side_1: [35, 182], side_2: [36, 184], side_3: [44, 184],
 };
-const FABINHO_ANCHOR = {};
 
-// DOM images: atlas frame → public/art/ui/<file>.png, copied 1:1.
+// Atlas keep-lists: only the frames the game draws are shipped (names or patterns, after the derived frames are added).
+// Every sprite is still cut and checked, and the contact sheets in shots/ show all of them, so picking up another
+// pose from a sheet = adding its name here. Readers: src/game/{rafaView,rafaGym,rafaMuleta,bosses,companion}.ts and the
+// tables in src/art/sheets.ts.
+const G_RUN = /^g_run_\d$/; // companion.ts enumerates g_run_0..n, so a cast member keeps the whole run
+const KEEP = {
+  rafa: [/^roll_\d$/, 'spokes', 'part_wheel', 'glow', 'side_1', 'side_2', 'armsup_s', 'point_s',
+    'push_0'], // push_0: Rafa for scale on the bake-*.mjs review sheets
+  rafagym: ['run_upper', 'pelvis', 'thigh', 'thigh_far', 'shin', 'shin_far', 'shoe', 'stand_0', 'stand_1', 'cheer_0',
+    'cheer_1', 'knees', 'guard', 'leap', 'leap_up', 'glow'],
+  rafamuleta: [/^walk_[0-3]$/, /^crutch_[0-3]$/, /^dance_\d$/, 'g_pose_idle', 'g_pose_armsup', 'g_pose_point', 'glow'],
+  fabinhogym: [/^run_\d$/, 'g_pose_idle', 'g_pose_wave', 'g_pose_armsup', 'g_pose_laugh', 'g_pose_phone', 'g_pose_think',
+    'g_defeated'],
+  giovanni: [G_RUN, 'g_pose_idle', 'g_pose_phone', 'g_pose_armsup', 'g_pose_laugh'],
+  nathalia: [G_RUN, 'g_pose_idle', 'g_pose_laugh', 'g_pose_armsup'],
+  murilo: [G_RUN, 'g_pose_idle', 'g_pose_think', 'g_pose_armsup', 'g_pose_laugh'],
+};
+
+// DOM images: atlas frame → public/art/ui/<file>.png, copied 1:1. Only what src/ui/screens.ts and jokes.ts load.
 const RAFA_UI = ['face_smile', 'face_laugh', 'face_grin', 'face_shocked', 'face_sad', 'face_angry', 'pose_wave',
-  'pose_phone', 'pose_armscrossed', 'pose_armsup', 'pose_chin', 'pose_point', 'turn_front', 'turn_34']
+  'pose_phone', 'pose_armsup', 'pose_chin', 'pose_point', 'turn_34']
   .map((n) => [n, `rafa_${n}`]);
-const FABINHO_UI = [['face_laugh', 'face_laugh'], ['face_shocked', 'face_shocked'], ['face_angry', 'face_angry'],
-  ['armscrossed', 'armscrossed'], ['thumb_up', 'thumb_up'], ['point', 'point'], ['defeated', 'defeated'],
-  ['sulk', 'sulk']].map(([n, f]) => [n, `fabinho_${f}`]);
 const RAFAGYM_UI = [['face_smile', 'face_smile'], ['face_laugh', 'face_laugh'], ['face_grin', 'face_grin'],
   ['face_shocked', 'face_shocked'], ['face_sad', 'face_sad'], ['face_angry', 'face_angry'], ['turn_34', 'turn_34'],
   ['cheer_0', 'armsup'], ['knees', 'knee'], ['phone_0', 'phone']].map(([n, f]) => [n, `rafagym_${f}`]);
@@ -247,8 +240,12 @@ function blit(dst, src, dx, dy) {
   }
 }
 
-// Shelf-pack into a fixed-width atlas, tallest first. anchors[name] = [x, y] crop px → frame origin (Phaser `anchor`).
-function writeAtlas(who, src, sprites, anchors) {
+// Shelf-pack KEEP[who] into a fixed-width atlas, tallest first. anchors[name] = [x, y] crop px → frame origin (Phaser
+// `anchor`).
+function writeAtlas(who, src, all, anchors) {
+  const keep = KEEP[who], sprites = all.filter((s) => keep.some((k) => (typeof k === 'string' ? k === s.name : k.test(s.name))));
+  const lost = keep.filter((k) => typeof k === 'string' && !sprites.some((s) => s.name === k));
+  if (lost.length) throw new Error(`${who}: KEEP names no sprite: ${lost.join(', ')}`);
   const ATLAS_W = 2048;
   const byHeight = [...sprites].sort((a, b) => b.h - a.h);
   let sx = PAD, sy = PAD, shelf = 0;
@@ -256,7 +253,7 @@ function writeAtlas(who, src, sprites, anchors) {
     if (sx + s.w + PAD > ATLAS_W) { sx = PAD; sy += shelf + PAD; shelf = 0; }
     s.ax = sx; s.ay = sy; sx += s.w + PAD; shelf = Math.max(shelf, s.h);
   }
-  const atlas = new PNG({ width: ATLAS_W, height: sy + shelf + PAD });
+  const atlas = new PNG({ width: Math.max(...sprites.map((s) => s.ax + s.w)) + PAD, height: sy + shelf + PAD }); // trimmed to what is used
   const frames = {};
   for (const s of sprites) {
     blit(atlas, s.png, s.ax, s.ay);
@@ -282,11 +279,7 @@ function writeUi(sprites, list) {
   const by = Object.fromEntries(sprites.map((s) => [s.name, s]));
   for (const [name, file] of list) fs.writeFileSync(path.join(UI, `${file}.png`), PNG.sync.write(by[name].png));
 }
-
-
-
 const rafa = slice('art-src/characters/rafa-sheet.png', RAFA);
-const fab = slice('art-src/characters/fabinho-sheet.png', FABINHO);
 const gym = slice('art-src/characters/rafa-sheet-gym.PNG', RAFAGYM).filter((s) => !s.name.startsWith('_'));
 
 // --- Rafa: frames derived at build time (the sheet crops above stay untouched) ---
@@ -429,18 +422,6 @@ for (const [name, [cx, cy, b]] of Object.entries(POSE_WHEEL)) {
   add(name.replace('pose_', '') + '_s', ds.png, ds.anchor);
 }
 
-// Fabinho: ground = bottom of the sprite (feet, or whatever touches the floor); x = centre of his hair, so the head
-// holds still while legs and arms swing (run, walk, leap). Sit-ups pivot on the feet (right edge).
-function hairX(png) {
-  let n = 0, sx = 0;
-  for (let i = 0; i < png.data.length; i += 4) {
-    const [r, g, b, a] = png.data.subarray(i, i + 4);
-    if (a >= 200 && r > 90 && r < 215 && g > 45 && g < 140 && b > 15 && b < 95 && r - g > 30 && g - b > 15 && r - b > 60) {
-      n++; sx += (i / 4) % png.width;
-    }
-  }
-  return Math.round(sx / n);
-}
 // Push-ups pivot on the front hand (rightmost opaque pixel near the floor).
 function handX(png) {
   let x1 = 0;
@@ -448,11 +429,6 @@ function handX(png) {
     if (png.data[(y * png.width + x) * 4 + 3] >= 200) x1 = Math.max(x1, x);
   }
   return x1 - 12;
-}
-for (const s of fab) {
-  const x = s.name.startsWith('situp_') ? s.w - 40 : s.name.startsWith('pushup_') ? handX(s.png)
-    : s.name.startsWith('face_') ? Math.round(s.w / 2) : hairX(s.png);
-  FABINHO_ANCHOR[s.name] = [x, s.h - RING];
 }
 
 // Gym Rafa: ground = bottom of the sprite; x = her glasses (dark rim pixels with face skin just above and below), so
@@ -512,7 +488,6 @@ const addGlow = (list, anchors, frame) => {
   return g;
 };
 writeAtlas('rafa', 'art-src/characters/rafa-sheet.png', [...rafa, ...derived, addGlow(rafa, RAFA_ANCHOR, 'push_0')], RAFA_ANCHOR);
-writeAtlas('fabinho', 'art-src/characters/fabinho-sheet.png', fab, FABINHO_ANCHOR);
 // --- Gym Rafa: cut-out parts for the run rig (src/game/rafaGym.ts). The sheet's five run frames are near-copies of one
 // mid-stride pose, so the run is rebuilt from her own pixels: upper body from run_1, a straight striped leg from run_4
 // (cut at the knee into thigh + shin), the flat side-on shoe from walk_0. Points are crop px of those frames.
@@ -629,7 +604,7 @@ function gPoses(by, anchors, names, height = by.back_0.h - 2 * RING) {
 const standardAnchors = (sprites) => Object.fromEntries(sprites.map((s) =>
   [s.name, [/^(face_|prop_)/.test(s.name) ? Math.round(s.w / 2) : faceX(s.png), s.h - RING]]));
 
-// Gym Fabinho v2 (level-1 boss): replaces fabinho-gym.PNG under the same atlas name. His run row is a genuine cycle.
+// Gym Fabinho v2 (level-1 boss). His run row is a genuine cycle.
 // Knocked flat = his scaled idle pose turned 90° clockwise (a lossless pixel transpose: head to the right).
 const fabgym = slice('art-src/characters/fabinho-v2-gym.PNG', FABINHOGYM_SHEET);
 const FABINHOGYM_ANCHOR = standardAnchors(fabgym);
@@ -643,9 +618,7 @@ const FABINHOGYM_ANCHOR = standardAnchors(fabgym);
   g.push({ name: 'g_defeated', png, w: png.width, h: png.height });
   FABINHOGYM_ANCHOR.g_defeated = [Math.round(png.width / 2), png.height - RING];
   writeAtlas('fabinhogym', 'art-src/characters/fabinho-v2-gym.PNG', [...fabgym, ...g], FABINHOGYM_ANCHOR);
-  writeUi(fabgym, [['face_laugh', 'face_laugh'], ['face_shocked', 'face_shocked'], ['face_angry', 'face_angry'],
-    ['turn_34', 'turn_34'], ['pose_armsup', 'armsup']].map(([n, f]) => [n, `fabinhogym_${f}`]));
-  fs.rmSync(path.join(UI, 'fabinhogym_asleep.png'), { force: true }); // the v1 sheet's sleeping pose has no v2 match
+  writeUi(fabgym, [['face_laugh', 'fabinhogym_face_laugh'], ['turn_34', 'fabinhogym_turn_34']]);
 }
 
 // The crutch Rafa (level 2), from her own sheet.
@@ -671,8 +644,8 @@ writeAtlas('rafamuleta', 'art-src/characters/rafaela-muleta.PNG', [...muleta,
   ...gPoses(byName(muleta), RAFAMULETA_ANCHOR, ['pose_idle', 'pose_armsup', 'pose_point', 'pose_phone']),
   addGlow(muleta, RAFAMULETA_ANCHOR, 'walk_0')], RAFAMULETA_ANCHOR);
 writeUi(muleta, [['face_smile', 'face_smile'], ['face_laugh', 'face_laugh'], ['face_grin', 'face_grin'],
-  ['face_shocked', 'face_shocked'], ['face_angry', 'face_angry'], ['turn_34', 'turn_34'], ['pose_armsup', 'armsup'],
-  ['pose_phone', 'phone'], ['dance_0', 'dance']].map(([n, f]) => [n, `rafamuleta_${f}`]));
+  ['face_shocked', 'face_shocked'], ['face_angry', 'face_angry'], ['turn_34', 'turn_34'], ['pose_phone', 'phone'],
+  ['dance_0', 'dance']].map(([n, f]) => [n, `rafamuleta_${f}`]));
 
 // Taller without a bigger head (these are chibi sprites: height comes from the body). The neck line is the
 // narrowest silhouette row near the face, 25–55% down the figure; above it the frame is copied 1:1 (head, and hands
@@ -724,9 +697,9 @@ function stretchBody(png, [ax, ay], sy, sx) {
 const WEDDING = {
   // Giovanni is taller than Rafa: his body (below the neck) is stretched so he stands this tall, head kept at scale.
   giovanni: { src: 'art-src/characters/giovanni-sheet.PNG', names: GIOVANNI_SHEET, stretch: { height: 212, widen: 1.06 },
-    ui: [['turn_34', 'giovanni'], ['pose_phone', 'giovanni_phone'], ['face_laugh', 'giovanni_face_laugh']] },
+    ui: [['turn_34', 'giovanni'], ['pose_phone', 'giovanni_phone']] },
   nathalia: { src: 'art-src/characters/nathalia-sheet.PNG', names: NATHALIA_SHEET,
-    ui: [['face_smile', 'nathalia_face_smile'], ['turn_34', 'nathalia_turn_34']] },
+    ui: [['turn_34', 'nathalia_turn_34']] },
   murilo: { src: 'art-src/characters/murilo-sheet.PNG', names: MURILO_SHEET,
     ui: [['turn_34', 'murilo_turn_34']] },
 };
@@ -771,9 +744,8 @@ for (const [who, c] of Object.entries(WEDDING)) {
   writeUi(ui, c.ui);
 }
 writeUi(rafa, RAFA_UI);
-writeUi(fab, FABINHO_UI);
 writeUi(gym, RAFAGYM_UI);
-console.log(`${RAFA_UI.length + FABINHO_UI.length + RAFAGYM_UI.length}+ DOM images → ${UI}/`);
+console.log(`${RAFA_UI.length + RAFAGYM_UI.length}+ DOM images → ${UI}/`);
 
 // --- visual checks (git-ignored) ---
 fs.mkdirSync(CHECK, { recursive: true });
@@ -798,7 +770,6 @@ function contact(file, sprites) {
   fs.writeFileSync(path.join(CHECK, file), PNG.sync.write(png));
 }
 contact('slice-contact.png', rafa);
-contact('slice-fabinho.png', fab);
 contact('slice-gym.png', gym);
 
 // Anchor check, 2x: each group's frames placed by anchor on a shared baseline (black) and anchor line (red), followed
@@ -833,7 +804,6 @@ const R_ALL = [...rafa, ...derived];
 const seq = (p, n) => Array.from({ length: n }, (_, i) => `${p}${i}`);
 onion('slice-push.png', R_ALL, RAFA_ANCHOR, [seq('push_', 5), seq('side_', 4)]);
 onion('slice-poses.png', R_ALL, RAFA_ANCHOR, [seq('roll_', 5), ['push_0', 'armsup_s'], ['push_0', 'point_s']], 260);
-onion('slice-fab-run.png', fab, FABINHO_ANCHOR, [seq('run_', 5), seq('walk_', 3)], 260, 260);
 onion('slice-gym-run.png', gym, RAFAGYM_ANCHOR, [seq('run_', 5), seq('walk_', 5), ['stand_0', 'stand_1']], 220, 240);
 contact('slice-gym-rig.png', rigParts);
 contact('slice-fabinhogym.png', fabgym);
@@ -845,7 +815,6 @@ for (const [who, w] of Object.entries(wedding)) {
   onion(`slice-${who}-g.png`, w.scaled, w.anchors, [seq('g_walk_', 4), seq('g_run_', 5), ['g_pose_idle', 'g_pose_phone', 'g_pose_think']], 230, 280);
 }
 onion('slice-gym-moves.png', gym, RAFAGYM_ANCHOR, [['crouch', 'leap', 'leap_up', 'land'], ['cheer_0', 'cheer_1'], ['guard', 'stand_0'], seq('pushup_', 2), seq('squat_', 3)], 240, 240);
-onion('slice-fab-moves.png', fab, FABINHO_ANCHOR, [['leap_0', 'leap_1', 'crouch', 'halfsquat'], seq('pushup_', 2), seq('situp_', 2), ['halfsquat', 'squat']], 320, 260);
 // Giovanni's height, three ways, next to the crutch Rafa at game scale (2× for viewing): native small row, the old
 // uniform upscale, the body stretch. Frames: standing (back view turned is not useful) — walk_0, run_2, pose_idle.
 {

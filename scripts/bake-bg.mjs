@@ -25,7 +25,7 @@ const manifest = {
     'Sprites: pivot = anchor point in sprite px (rotation centre for cones). Mounted sprites sit at each mount point of their layer (layer coords, every tile repeat): blend "normal" ones are drawn right after that layer, blend "add" (additive cones) after all layers and the ground, before hazards and characters. `frames` = animation frames (file = frames[0]). `once` sprites are not mounted: they are placed once in the world (see their note).',
   ],
   scale: S, view: { height: VIEW_H, groundY: GROUND_Y, block: BLOCK, maxWidth: 840 },
-  logo: { file: 'logo.png', scale: 4, small: 'bg/logo_small.png', smallScale: 2, note: 'DOM images, already enlarged; draw at 1:1 CSS (or smaller) with image-rendering: pixelated.' },
+  logo: { file: 'logo.png', scale: 4, note: 'DOM image, already enlarged; draw at 1:1 CSS (or smaller) with image-rendering: pixelated.' },
   themes: {},
 };
 
@@ -72,23 +72,13 @@ for (const [name, m] of Object.entries(manifest.themes)) {
 
 const L = logo();
 save(L.big, 'public/art/logo.png');
-write(L.small, 'logo_small.png');
 fs.writeFileSync(`${OUT}/manifest.json`, JSON.stringify(manifest, null, 1).replace(/\[\s+([-\d.,\s]+?)\s+\]/g, (_, a) => `[${a.replace(/\s+/g, ' ')}]`) + '\n');
 
 // ---------- mock screenshots ----------
 const atlas = (name) => ({ img: load(`public/art/${name}.png`), json: JSON.parse(fs.readFileSync(`public/art/${name}.json`, 'utf8')) });
 const frame = (a, name) => { const f = a.json.frames[name].frame; return crop(a.img, f.x, f.y, f.w, f.h); };
 const rafaAtlas = atlas('rafa'), props = atlas('props'), bosses = fs.existsSync('public/art/bosses.json') ? atlas('bosses') : null;
-/** 1:1 sprite whose feet are its lowest opaque row; anchor x = centre. */
-function standing(file) {
-  const c = load(file);
-  let bottom = 0;
-  for (let i = 3; i < c.d.length; i += 4) if (c.d[i]) bottom = Math.floor(i / 4 / c.w);
-  return { c, ax: c.w / 2, ay: bottom + 1 };
-}
 const push0 = { c: frame(rafaAtlas, 'push_0'), ax: rafaAtlas.json.frames.push_0.anchor.x * rafaAtlas.json.frames.push_0.frame.w, ay: rafaAtlas.json.frames.push_0.anchor.y * rafaAtlas.json.frames.push_0.frame.h };
-const kit = (n) => (fs.existsSync(`public/art/ui/rafakit_${n}.png`) ? standing(`public/art/ui/rafakit_${n}.png`) : push0);
-const RAFA = { gym: kit('standing'), church: kit('crutches'), party: push0 };
 const GYM_PROPS = ['kettlebell', 'treadmill', 'dumbbell', 'bench', 'plateRack'];
 const mod = (a, n) => ((a % n) + n) % n;
 
@@ -134,15 +124,14 @@ function mock(t, w, camLeft, phase, altarAt = null) {
     });
   }
   const gy = GROUND_Y * S, B = BLOCK * S, rx = Math.round(0.28 * w * S), ol = '#140b09';
-  const R0 = RAFA[t.name];
   const box = (dx, wb, hb, yb, col) => { const x = Math.round(rx + dx * B), y = gy - (yb + hb) * B; rect(big, x - 4, y - 4, wb * B + 8, hb * B + 8, ol); rect(big, x, y, wb * B, hb * B, col); rect(big, x, y, wb * B, 6, '#ffffff', 0.35); };
   if (altarAt !== null) {
     // the couple's spots, outlined where the couple artist's sprites will stand
     for (const k of ['bride', 'groom']) { const x = (altarAt + altar.spots[k].x) * S; for (let y = gy - 2.4 * B; y < gy; y += 12) { rect(big, x - 34, y, 4, 6, '#ffffff'); rect(big, x + 30, y, 4, 6, '#ffffff'); } }
-    blit(big, R0.c, Math.round((altarAt + altar.spots.rafa.x) * S - R0.ax), Math.round(gy - R0.ay));
+    blit(big, push0.c, Math.round((altarAt + altar.spots.rafa.x) * S - push0.ax), Math.round(gy - push0.ay));
     return big;
   }
-  blit(big, R0.c, Math.round(rx - R0.ax), Math.round(gy - R0.ay));
+  blit(big, push0.c, Math.round(rx - push0.ax), Math.round(gy - push0.ay));
   if (t.name === 'gym') {
     // real hazard sprites (props atlas, ×3, pivot bottom-centre) at block offsets from Rafa
     [1.8, 4.4, 6.0, 8.2, 9.8].forEach((dx, i) => {

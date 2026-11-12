@@ -1,4 +1,4 @@
-// Mobile hardening and the page-wide image fallback.
+// Mobile hardening, and missing images hide themselves.
 
 /** No zoom, callout, selection, double-tap or rubber-band scrolling. */
 export function harden(): void {
@@ -10,16 +10,8 @@ export function harden(): void {
   }, { passive: false });
   document.addEventListener('touchstart', () => {}, { passive: true }); // iOS only applies :active with a touch listener
 
-  // Art is being produced in parallel: a missing image tries its data-fb fallback once, then hides itself.
   document.addEventListener('error', (e) => {
-    const img = e.target;
-    if (!(img instanceof HTMLImageElement)) return;
-    const fb = img.dataset.fb;
-    if (fb) {
-      delete img.dataset.fb;
-      img.classList.remove('px');
-      img.src = fb;
-    } else img.hidden = true;
+    if (e.target instanceof HTMLImageElement) e.target.hidden = true;
   }, true);
   document.addEventListener('load', (e) => {
     if (e.target instanceof HTMLImageElement) e.target.hidden = false;

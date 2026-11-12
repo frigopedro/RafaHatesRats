@@ -15,7 +15,7 @@ const SFX: Record<string, (o: Out, t: number) => void> = {
   hop: sfx.hop, bigJump: sfx.bigJump, land: (o, t) => sfx.land(o, t), landHeavy: (o, t) => sfx.land(o, t, true),
   coin: (o, t) => sfx.coin(o, t), coinStreak: (o, t) => [0, 2, 4, 5, 7].forEach((k, i) => sfx.coin(o, t + i * 0.12, k)),
   ignite: sfx.ignite, powerDown: sfx.powerDown, whey: sfx.whey, pre: sfx.pre, shieldBreak: sfx.shieldBreak,
-  smash: sfx.smash, squeak: sfx.squeak, crash: sfx.crash, bossSting: sfx.bossSting, tick: sfx.tick,
+  smash: sfx.smash, squeak: sfx.squeak, crash: sfx.crash, tick: sfx.tick,
   defeat: sfx.defeat, win: (o, t) => sfx.win(o, t, 69),
   countdown: (o, t) => [3, 2, 1].forEach((n, i) => sfx.countdown(o, t + i * 0.38, n)),
   preEnd: (o, t) => (sfx.preTick(o, t), sfx.preTick(o, t + 0.45), sfx.fizzle(o, t + 0.9)),

@@ -1,8 +1,8 @@
-// Dev-only gallery (gallery.html): every animation of the sheet characters at game scale (1 block = 96 px, one game
-// px = one device px), driven by a 120 BPM beat clock — `?beat=N` freezes it at beat N for screenshots — followed by
-// every atlas frame with its pivot. Other lanes add their own entries to SECTIONS / ATLASES.
+// Dev-only gallery (gallery.html, not part of the build): the sheet characters' in-game animations at game scale
+// (1 block = 96 px, one game px = one device px), driven by a 120 BPM beat clock — `?beat=N` freezes it at beat N for
+// screenshots — followed by every shipped atlas frame with its pivot (the full sheets: shots/slice-*.png).
 import Phaser from 'phaser';
-import { animFrame, FABINHO, FABINHO_ATLAS, FABINHOGYM, FABINHOGYM_ATLAS, GIOVANNI, MURILO, NATHALIA, RAFAGYM_ATLAS, RAFAMULETA_ATLAS, type SheetAnim } from './art/sheets';
+import { animFrame, FABINHOGYM, FABINHOGYM_ATLAS, RAFAGYM_ATLAS, RAFAMULETA_ATLAS, type SheetAnim } from './art/sheets';
 import { TICKS_PER_BEAT as TPB, VIEW } from './config';
 import { createFabinhoGymRun, drawFabinhoGymRun } from './game/fabinhoGym';
 import { createRafaGym, drawRafaGym } from './game/rafaGym';
@@ -135,7 +135,7 @@ const gymSection = rafaRow('Rafa — gym, level 1 (rafaGym.ts, real sim)',
   [[C.idle, 270], [C.move, 270], [C.hop, 300], [C.big, 300], [C.gelol, 300], [C.victory, 270], [C.knees, 270], [C.death, 480], [C.scale, 340]],
   (scene, c) => {
     const r = createRafaGym(scene);
-    const fab = c === C.scale ? scene.add.image(0, 0, FABINHOGYM_ATLAS, 'walk_0') : null;
+    const fab = c === C.scale ? scene.add.image(0, 0, FABINHOGYM_ATLAS, FABINHOGYM.run.frames[0]) : null;
     return {
       parts: fab ? [r.root, fab] : [r.root],
       draw: (p, lb, dist, ms) => {
@@ -217,59 +217,12 @@ function sheetSection<K extends string>(title: string, atlas: string, table: Rec
     },
   };
 }
-const FAB_CASES: { name: keyof typeof FABINHO; moving?: boolean }[] = [
-  { name: 'run', moving: true }, { name: 'walk', moving: true }, { name: 'leap' }, { name: 'land' }, { name: 'throw' },
-  { name: 'idle' }, { name: 'taunt_pushup' }, { name: 'taunt_situp' }, { name: 'defeated' }, { name: 'sulk' },
-  { name: 'idleBust' }, { name: 'throwBust' },
+const FAB_CASES: { name: keyof typeof FABINHOGYM; moving?: boolean }[] = [
+  { name: 'run', moving: true }, { name: 'leap' }, { name: 'land' }, { name: 'throw' }, { name: 'idle' },
+  { name: 'taunt_laugh' }, { name: 'taunt_phone' }, { name: 'defeated' }, { name: 'sulk' },
 ];
-const fabinhoGymSection = sheetSection('Fabinho — gym v2, level-1 boss (FABINHOGYM) — taunt_* = laugh / arms crossed / phone; defeated = baked lying pose',
+const fabinhoGymSection = sheetSection('Fabinho — gym v2, level-1 boss (FABINHOGYM) — taunt_* = laugh / phone; defeated = baked lying pose',
   FABINHOGYM_ATLAS, FABINHOGYM, FAB_CASES);
-const fabinhoSection = sheetSection('Fabinho — suit (FABINHO) — leap on a 1-beat, 2-block arc; *Bust = HUD/cards only',
-  FABINHO_ATLAS, FABINHO, FAB_CASES);
-
-// --- Level-2 wedding cast at in-game scale (g_ frames) beside the crutch Rafa; the dashed line is her height ---
-const WED_CASES: [string, typeof GIOVANNI, keyof typeof GIOVANNI, boolean][] = [
-  ['Giovanni', GIOVANNI, 'walk', true], ['Giovanni', GIOVANNI, 'run', true], ['Giovanni', GIOVANNI, 'phone', false],
-  ['Nathalia', NATHALIA, 'walk', true], ['Nathalia', NATHALIA, 'run', true], ['Nathalia', NATHALIA, 'idle', false],
-  ['Murilo', MURILO, 'walk', true], ['Murilo', MURILO, 'run', true], ['Murilo', MURILO, 'idle', false],
-  ['Giovanni', GIOVANNI, 'think', false], ['Nathalia', NATHALIA, 'armsup', false], ['Murilo', MURILO, 'phone', false],
-];
-const CRUTCH_H = 180; // crutch Rafa's visual height with her crutches, px (her sheet's small row, 1:1)
-const weddingSection: Section = {
-  title: 'Level-2 cast, in-game scale (g_ frames, small rows 1:1) — first cell: crutch Rafa; dashed line = her 180 px height',
-  height: TITLE + 2 * 380,
-  preload: (scene) => {
-    for (const a of ['giovanni', 'nathalia', 'murilo', RAFAMULETA_ATLAS]) if (!scene.textures.exists(a)) scene.load.atlas(a, `art/${a}.png`, `art/${a}.json`);
-  },
-  create(scene, top, g) {
-    const per = 7, w = W / per, h = 380;
-    const rafa = createRafaMuleta(scene);
-    label(scene, 10, top + TITLE + 6, 'crutch Rafa (rafaMuleta)').setDepth(1);
-    const holder = scene.add.container(0, top + TITLE + h - 50, [rafa.body]);
-    const cells = WED_CASES.map(([who, t, key, moving], i) => {
-      const k = i + 1, x = (k % per) * w, y0 = top + TITLE + Math.floor(k / per) * h;
-      label(scene, x + 10, y0 + 6, `${who} ${key}`).setDepth(1);
-      const anim = t[key] as SheetAnim;
-      return { x, y0, k, anim, moving, img: scene.add.image(x + w / 2, y0 + h - 50, t.atlas, anim.frames[0]) };
-    });
-    return (beat) => {
-      const guide = (x: number, groundY: number) => {
-        for (let gx = x; gx < x + w; gx += 12) g.fillStyle(0x2050d0, 1).fillRect(gx, groundY - CRUTCH_H, 6, 2);
-      };
-      const lb = beat % 4, p = simulate(lb), dist = beat * 4 * B, gy0 = top + TITLE + h - 50;
-      cell(g, 0, w, top + TITLE, gy0, top + TITLE + h, dist, 0);
-      guide(0, gy0);
-      drawRafaMuleta(rafa, p.s, p.fx, lb, dist, 0, false, lb * MS_PER_BEAT, 0, true);
-      holder.x = 130 - dist;
-      for (const { x, y0, k, anim, moving, img } of cells) {
-        const groundY = y0 + h - 50;
-        cell(g, x, w, y0, groundY, y0 + h, moving ? dist : 0, k);
-        guide(x, groundY);
-        img.setFrame(animFrame(anim, beat));
-      }
-    };
-  },
-};
 
 // ?film=run|gelol|hop|big: gym Rafa frame by frame at 60 fps (120 BPM → 30 frames per beat), each cell on ground
 // marks fixed in the world (they scroll at floor speed), so a planted foot must stay on its mark.
@@ -278,7 +231,7 @@ const FILMS: Record<string, { c: RafaCase; from: number; frames: number; title: 
   gelol: { c: C.gelol, from: 1, frames: 30, title: 'Gelol run (beat 1–2 of overdrive, ×1.5 cadence) at 60 fps' },
   hop: { c: C.hop, from: 0.4, frames: 30, title: 'hop: take-off at frame 3, landing ≈ frame 26, at 60 fps' },
   big: { c: C.big, from: 0.15, frames: 40, title: 'big jump: take-off at frame 3, landing ≈ frame 33, at 60 fps' },
-  fabrun: { c: C.move, from: 0, frames: 30, title: 'gym Fabinho run rig (fabinhoGym.ts), one beat at 60 fps', who: 'fab' },
+  fabrun: { c: C.move, from: 0, frames: 30, title: 'gym Fabinho run (fabinhoGym.ts), one beat at 60 fps', who: 'fab' },
   both: { c: C.move, from: 0, frames: 30, title: 'Rafa with Fabinho running beside her (as in the boss section), 60 fps', who: 'both' },
   muleta: { c: C.move, from: 0, frames: 28, title: 'crutch Rafa (rafaMuleta.ts), one beat at 60 fps and 132 BPM (plants at frames 0 and 14)', who: 'muleta', bpm: 132 },
 };
@@ -317,8 +270,8 @@ function filmSection(name: string): Section {
   };
 }
 const film = new URLSearchParams(location.search).get('film');
-const SECTIONS: Section[] = film ? [filmSection(film)] : [glowSection, gymSection, fabinhoGymSection, muletaSection, weddingSection, rafaSection, fabinhoSection];
-const ATLASES = film ? [] : ['rafagym', 'fabinhogym', 'rafamuleta', 'giovanni', 'nathalia', 'murilo', 'rafa', 'fabinho']; // static "all frames" listing below the canvas
+const SECTIONS: Section[] = film ? [filmSection(film)] : [glowSection, gymSection, fabinhoGymSection, muletaSection, rafaSection];
+const ATLASES = film ? [] : ['rafagym', 'fabinhogym', 'rafamuleta', 'giovanni', 'nathalia', 'murilo', 'rafa']; // static "all frames" listing below the canvas
 
 class Gallery extends Phaser.Scene {
   private updates: ((beat: number) => void)[] = [];

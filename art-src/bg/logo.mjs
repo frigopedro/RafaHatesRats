@@ -1,5 +1,5 @@
 // "RafaHatesRats" logo: chunky crooked letters (gold→orange, "Hates" hotter), 2-ring outline, drop shadow, and a
-// grey rat in a red "no" sign. Drawn at 1 art px, baked ×4 (logo.png) and ×2 (bg/logo_small.png).
+// grey rat in a red "no" sign. Drawn at 1 art px, baked ×4 (logo.png).
 import { OUTLINE, R, bayer, blit, canvas, crop, ellipse, line, outline, px, rect, scale } from './lib.mjs';
 
 // 13 rows each; lowercase use rows 4–12.
@@ -75,5 +75,5 @@ export default function logo() {
   let x0 = W, y0 = H, x1 = 0, y1 = 0; // trim to content + 1 px
   for (let j = 0; j < H; j++) for (let i = 0; i < W; i++) if (c.d[(j * W + i) * 4 + 3]) { x0 = Math.min(x0, i); y0 = Math.min(y0, j); x1 = Math.max(x1, i); y1 = Math.max(y1, j); }
   const t = crop(c, x0 - 1, y0 - 1, x1 - x0 + 3, y1 - y0 + 3);
-  return { big: scale(t, 4), small: scale(t, 2) };
+  return { big: scale(t, 4) };
 }

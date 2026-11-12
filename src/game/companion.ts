@@ -5,7 +5,6 @@
 // frames `g_*`, all facing right, origin at the feet, drawn 1:1) may be missing: then there is no Giovanni and no
 // chaser, and the generic drawn bride/groom (bosses atlas) stand at the altar.
 import Phaser from 'phaser';
-import { FABINHO_ATLAS } from '../art/sheets';
 import { TICKS_PER_BEAT as TPB, VIEW } from '../config';
 import type { LevelDef, Section, SimState, Theme } from '../types';
 import type { BgManifest } from './background';
@@ -72,10 +71,8 @@ export class Trail {
 
 // --- Giovanni ---
 
-/** `?companion=fabinho` (dev server) borrows Fabinho's atlas to try the actor with another sheet. */
 const GIOVANNI = {
   giovanni: { atlas: 'giovanni', run: 'g_run', idle: 'g_pose_idle', react: 'g_pose_phone', win: 'g_pose_armsup' },
-  fabinho: { atlas: FABINHO_ATLAS, run: 'run', idle: 'turn_34', react: 'turn_front', win: 'leap_1' },
 };
 const BEHIND = 1.35; // blocks behind Rafa's feet while walking: his front arm clears her back crutch, his head the timer bar over hers
 const BESIDE = 1.25; // at the altar, clear of her dance
@@ -84,20 +81,13 @@ const DELAY = 0.12; // beats he jumps after her: late enough to read as copying,
 export class Companion {
   private readonly img: Phaser.GameObjects.Image;
 
-  private static id(def: LevelDef): keyof typeof GIOVANNI | null {
-    const q = import.meta.env.DEV ? new URLSearchParams(location.search).get('companion') : null;
-    return q && q in GIOVANNI ? (q as keyof typeof GIOVANNI) : def.companion ?? null;
-  }
-
   static preload(scene: Phaser.Scene, def: LevelDef): void {
-    const id = Companion.id(def);
-    if (id === 'fabinho') scene.load.atlas(FABINHO_ATLAS, 'art/fabinho.png', 'art/fabinho.json');
-    else if (id) loadOptionalAtlas(scene, GIOVANNI[id].atlas);
+    if (def.companion) loadOptionalAtlas(scene, GIOVANNI[def.companion].atlas);
   }
 
-  /** The level's companion, or null when it has none or its atlas isn't there (yet). */
+  /** The level's companion, or null when it has none or its atlas isn't there. */
   static create(scene: Phaser.Scene, def: LevelDef, trail: Trail): Companion | null {
-    const id = Companion.id(def);
+    const id = def.companion;
     const sh = id && sheet(scene, GIOVANNI[id].atlas, GIOVANNI[id]);
     return sh ? new Companion(scene, sh, trail) : null;
   }

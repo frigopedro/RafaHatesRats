@@ -1,6 +1,6 @@
 // Sound effects: short, mostly sine/triangle chirps above the music's register so they read over it. Each takes the
 // context time to play at.
-import { blip, chord, filter, hit, horn, lead, mtof, noise, osc, whistle, type Out } from './voices';
+import { blip, chord, filter, hit, lead, mtof, noise, osc, type Out } from './voices';
 
 /** One oscillator with an exponential pitch sweep f0 → f1 and a percussive envelope. */
 function sweep(o: Out, t: number, d: number, type: OscillatorType | 'pulse', f0: number, f1: number, v: number, dest = o.dest) {
@@ -99,13 +99,6 @@ export function crash(o: Out, t: number) {
   wob.connect(n.frequency);
   osc(o, 'sine', 9, t, t + 0.45, wob);
   land(o, t + 0.05, true);
-}
-
-/** Boss entrance: two party-train honks and an apito trill. */
-export function bossSting(o: Out, t: number) {
-  horn(o, t, 0.16, 52, 1);
-  horn(o, t + 0.22, 0.3, 52, 1);
-  whistle(o, t + 0.6, 1, true);
 }
 
 /** Boss attack telegraph: a dry woodblock tick. */

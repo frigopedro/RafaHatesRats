@@ -21,7 +21,7 @@ export interface BossMove { name: string; t: number; release: number }
  *  faces right, the Aranha's left); frame '' = boss hidden (e.g. he is the hazard in flight). */
 export interface BossPose {
   frame: string; ahead: number; lift: number; flip: boolean; rot?: number; skid?: boolean; hit?: boolean; train?: TrainPose;
-  run?: number; // run phase in cycles: gym Fabinho draws his leg rig instead of `frame`
+  run?: number; // run phase in cycles: gym Fabinho draws his run cycle (fabinhoGym.ts) instead of `frame`
 }
 /** The train's body pivot `ahead` blocks of Rafa; `crash` = beats since it slammed to a stop (debris), if it did. */
 export interface TrainPose { ahead: number; crash?: number }
@@ -41,15 +41,13 @@ const frac = (v: number) => v - Math.floor(v);
 
 // --- Fabinho (level 1): runs ahead of Rafa, turns to throw plates / bowl med balls, leaps into shockwaves, ---
 // --- stops to taunt her between phases, and ends knocked flat when she overtakes him. ---
-// His sheet: swapping the suit for the gym outfit is this one line (same animation keys; poses use only the tables).
-const FAB = { atlas: FABINHOGYM_ATLAS, file: 'art/fabinhogym', anim: FABINHOGYM }; // suit: FABINHO_ATLAS, 'art/fabinho', FABINHO
+const FAB = { atlas: FABINHOGYM_ATLAS, file: 'art/fabinhogym', anim: FABINHOGYM };
 const A = FAB.anim;
 const first = (a: SheetAnim) => a.frames[0], last = (a: SheetAnim) => a.frames[a.frames.length - 1];
 const D = BOSS_AHEAD + 0.5; // his head (frame origin) half a block past the release point, so his hands are on it
-// Taunt (~4 beats with nothing thrown): dash a little further ahead, stop and taunt on the spot (whatever the sheet's
-// sheet has: laughing / checking his phone on the gym one, push-ups on the suit) while Rafa closes in, then sprint back.
-const sheetAnim = (key: string, fallback: SheetAnim) => (A as Record<string, SheetAnim>)[key] ?? fallback;
-const TAUNTS = { taunt: sheetAnim('taunt_laugh', A.taunt_pushup), taunt2: sheetAnim('taunt_phone', A.taunt_situp) };
+// Taunt (~4 beats with nothing thrown): dash a little further ahead, stop and taunt on the spot (laughing, then
+// checking his phone) while Rafa closes in, then sprint back.
+const TAUNTS = { taunt: A.taunt_laugh, taunt2: A.taunt_phone };
 const DASH = 0.5, UP = 2.5, BACK_T = 4, LEAD = 2; // beats since the cue; LEAD = extra blocks of the dash
 const run = (beat: number, rate = 1): BossPose => ({ frame: animFrame(A.run, beat * rate), run: beat * rate, ahead: D, lift: 0, flip: false });
 
@@ -212,7 +210,7 @@ interface Cue { beat: number; name: string; release: number }
 export class BossActor {
   private readonly cues: Cue[] = [];
   private readonly img: Phaser.GameObjects.Image;
-  private readonly legs: FabinhoGymRun | null; // gym Fabinho's leg-rig run
+  private readonly legs: FabinhoGymRun | null; // gym Fabinho's run cycle
   readonly kinds: ReadonlySet<HazardKind>;
   private readonly m: BossMove = { name: '', t: 0, release: NaN };
   private readonly train: Train | null;

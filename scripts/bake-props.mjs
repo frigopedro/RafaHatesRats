@@ -85,13 +85,11 @@ function cell(f) {
     <div class="spr" style="left:${ix}px;top:${iy}px;width:${w}px;height:${h}px;background-position:${-f.x * S}px ${-f.y * S}px"></div>
     <div class="floor"></div>${hb || ''}<div class="pv" style="left:${px - 2}px;top:${py - 2}px"></div><span>${f.name} ${f.cv.w}×${f.cv.h}</span></div>`;
 }
-const crutches = fs.existsSync(`${OUT}/ui/rafakit_crutches.png`) && b64(`${OUT}/ui/rafakit_crutches.png`);
 const scale = (img, w, h, ay, label, sx = 0, sy = 0) => `<div class="cell" style="width:${w + 20}px;height:${h + B}px;background-position:0 ${h % B}px">
   <div class="floor"></div><div style="position:absolute;left:10px;top:${h - ay}px;width:${w}px;height:${h}px;background:url(${img}) ${-sx}px ${-sy}px"></div><span>${label}</span></div>`;
-const rafa = (g) => {
+const rafa = () => {
   const r = rafaJson;
-  return scale(rafaUrl, r.frame.w, r.frame.h, r.anchor.y * r.frame.h, 'rafa push_0', r.frame.x, r.frame.y) +
-    (g === 'church' && crutches ? scale(crutches, 110, 229, 229, 'crutches') : '');
+  return scale(rafaUrl, r.frame.w, r.frame.h, r.anchor.y * r.frame.h, 'rafa push_0', r.frame.x, r.frame.y);
 };
 // Each level's backdrop: wall above the ground line, floor strip below (props must read on both).
 const BG = {
@@ -121,7 +119,7 @@ for (const [i, g] of GROUPS.entries()) {
     .hb{position:absolute;outline:1px dashed #ff6bd0aa}
     .pv{position:absolute;width:4px;height:4px;background:#ff3}
     span{position:absolute;left:3px;top:2px;white-space:nowrap;background:#000a;padding:0 3px}
-  </style><h1>${g}</h1>${rows.map((r) => `<div class="row">${rafa(g)}${r.map(cell).join('')}</div>`).join('')}`);
+  </style><h1>${g}</h1>${rows.map((r) => `<div class="row">${rafa()}${r.map(cell).join('')}</div>`).join('')}`);
   await page.screenshot({ path: `${SHOTS}/${i + 1}-${g}.png`, fullPage: true });
 }
 await browser.close();

@@ -15,7 +15,7 @@ import * as ui from './ui/screens';
 import { harden } from './ui/shell';
 
 // Dev flags: ?level=<id or 1-based index> ?t=<start beat> ?bot=1 (autoplay the solver trace) ?debug=1 (hitboxes). With ?bot or ?level
-// the menu is skipped. Dev server only: ?screen=menu|fases|ajustes|pause|hud|over|victory (&cause=<hazard> &as=<level id>
+// the menu is skipped. Dev server only: ?screen=menu|fases|ajustes|pause|hud|over|victory (&cause=<hazard>
 // &delay=1 &od=<beats> &pre=<beats>), ?notch=1.
 const q = new URLSearchParams(location.search);
 const qBeat = Number(q.get('t') ?? 0);
@@ -170,7 +170,6 @@ function nextLevel(): LevelDef {
 
 function simEvent(e: SimEvent) {
   safe(() => audio.onSimEvent(e));
-  if (import.meta.env.DEV) (window as { __simProbe?: (e: SimEvent) => void }).__simProbe?.(e); // audio wiring check
   ui.hud.event(e);
   if (e.type === 'win') win(control!);
 }
@@ -231,9 +230,7 @@ function devScreen(screen: string) {
     if (screen !== 'menu') document.querySelector<HTMLElement>(`[data-act=${screen}]`)!.click();
     return;
   }
-  // &as=church|party dresses level 1 up as a level that isn't in LEVELS yet (name, card, victory text).
-  const as = ui.CARDS.find((c) => c.id === q.get('as'));
-  load(as ? { ...LEVELS[0], id: as.id, songId: as.id, name: as.name } : qLevel ?? LEVELS[0], () => {
+  load(qLevel ?? LEVELS[0], () => {
     play();
     if (screen === 'pause') return setTimeout(() => pause(true), 600);
     if (screen === 'hud') // frozen run with power-up timers at &od= / &pre= beats left
