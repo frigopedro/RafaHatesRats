@@ -28,20 +28,30 @@ export interface RafaSprite {
   body: Phaser.GameObjects.Image;
   spokes: Phaser.GameObjects.Image; // rotating wheel interior, laid over the hollow roll_* frames at their hub
   wheel: Phaser.GameObjects.Image; // loose wheel for the crash
-  glow: Phaser.FX.Glow | undefined; // Gelol outline (WebGL only)
+  glow: Phaser.GameObjects.Image; // Gelol: the atlas's baked soft glow, behind her
 }
 
 export type RafaState = Pick<SimState, 'tick' | 'y' | 'vy' | 'support' | 'won' | 'overdriveFrom' | 'overdriveUntil'>;
 
 export function createRafa(scene: Phaser.Scene): RafaSprite {
+  const glow = createGelolGlow(scene, RAFA_ATLAS);
   const body = scene.add.image(0, 0, RAFA_ATLAS, 'roll_0');
   const spokes = scene.add.image(0, 0, RAFA_ATLAS, 'spokes');
-  const root = scene.add.container(0, 0, [body, spokes]);
+  const root = scene.add.container(0, 0, [glow, body, spokes]);
   const wheel = scene.add.image(0, 0, RAFA_ATLAS, 'part_wheel').setVisible(false);
-  body.preFX?.setPadding(14);
-  const glow = body.preFX?.addGlow(0xffa23a, 4, 0, false, 0.1, 10);
-  if (glow) glow.active = false;
   return { root, body, spokes, wheel, glow };
+}
+
+/** Gelol glow for every Rafa: one quad of the atlas's 'glow' frame (a soft warm silhouette baked by
+ *  scripts/slice-sheet.mjs, origin at her feet like her frames), additive, behind her — no FX render passes. */
+export function createGelolGlow(scene: Phaser.Scene, atlas: string): Phaser.GameObjects.Image {
+  return scene.add.image(0, 0, atlas, 'glow').setBlendMode('ADD').setVisible(false);
+}
+/** Shows it while `on`, pulsing on the beat (brightest and largest on the beat). */
+export function drawGelolGlow(glow: Phaser.GameObjects.Image, on: boolean, beat: number): void {
+  glow.setVisible(on);
+  const k = 1 - (beat - Math.floor(beat));
+  if (on) glow.setAlpha(0.5 + 0.4 * k).setScale(1 + 0.08 * k);
 }
 
 /** Poses Rafa. `beat` = render beat; (x, y) = world px of her hitbox bottom-centre (x also measures distance rolled).
@@ -91,10 +101,7 @@ export function drawRafa(r: RafaSprite, s: RafaState, fx: RafaFx, beat: number, 
     spokes.setPosition(hub.x - body.displayOriginX, hub.y - body.displayOriginY).setRotation((x / WHEEL_R) * SPIN_GEAR);
   }
   wheel.setVisible(false);
-  if (r.glow) {
-    r.glow.active = overdrive && !dead;
-    r.glow.outerStrength = 3 + 2 * (1 - (beat - Math.floor(beat))); // pulses on the beat
-  }
+  drawGelolGlow(r.glow, overdrive && !dead, beat);
 
   if (dead) {
     // She spins off: launched up and forward, tumbling, and falls out of view (straight down if she died in a hole).

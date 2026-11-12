@@ -59,9 +59,9 @@ export const level3: LevelDef = {
 
     // Warm-up (8–40): arriving at the reception — gifts, bottles, a knocked-over chair; the first big pieces (signposted);
     // then the fountains: one met between bursts (roll), two met mid-burst (hold).
-    gift(10), ...coinArc(9.65, HOP, 3),
+    gift(10), ...coinArc(9.65, HOP, 3, 144),
     bottle(12.5),
-    chair(15), ...coinArc(14.65, HOP, 3),
+    chair(15), ...coinArc(14.65, HOP, 3, 144),
     gift(17.5),
     hint(19, 'SEGURE!'),
     tower(21), ...coinArc(20.5, BIG, 5),

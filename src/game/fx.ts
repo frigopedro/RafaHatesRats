@@ -73,7 +73,7 @@ export class Fx {
       const a = findArt(scene, name);
       return a && scene.add.image(0, 0, a.key, a.frames[0]).setScale(scale).setDepth(33).setVisible(false);
     };
-    this.gelolIcon = icon('gelol', 3);
+    this.gelolIcon = icon('gelol', 2);
     this.preIcon = icon('pre', 2);
     this.beatLine = scene.add.rectangle(0, 0, 10, 8, 0xfff0b0).setOrigin(0, 0.5).setBlendMode(Phaser.BlendModes.ADD).setDepth(3);
     this.vignette = scene.add.image(0, 0, 'fx_heat').setOrigin(0, 1).setTint(0xff6a10).setDepth(3).setVisible(false);
@@ -166,8 +166,8 @@ export class Fx {
   /** Power-up timers floating above her head (`headY`): a chunky Gelol bar and a thinner Pré-treino one, each with
    *  its icon, draining with the beat; red and blinking on the beat at the end (steady with reduceFx). */
   private drawBars(t: number, x: number, headY: number, odLeft: number, preLeft: number): void {
-    const g = this.bars.clear(), W = 1.2 * B, x0 = x + 0.5 * B - W; // ends half a block ahead of her: never over what is coming
-    let y0 = headY - 0.35 * B;
+    const g = this.bars.clear(), W = 1.0 * B, x0 = x + 0.6 * B - W; // ends just ahead of her (never over what is coming); icons sit left, short of a companion behind her
+    let y0 = headY - 0.5 * B; // clear of her head and of Giovanni's (he is a bit taller)
     const bar = (left: number, total: number, warn: number, h: number, color: number, icon: Img | null) => {
       const on = left > 0;
       icon?.setVisible(on);

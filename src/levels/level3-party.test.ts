@@ -21,12 +21,12 @@ describe('level party — kindness', () => {
   });
 
   it('is beatable with big jumps only (the hop is optional, for coins)', () => {
-    const minHold = PHYS.minHoldTicks;
-    PHYS.minHoldTicks = Infinity; // releasing never cuts the rise
+    const minHold = PHYS.minHoldMs;
+    PHYS.minHoldMs = Infinity; // releasing never cuts the rise
     try {
       expect(solve(def, { marginMs: def.marginMs }).ok).toBe(true);
     } finally {
-      PHYS.minHoldTicks = minHold;
+      PHYS.minHoldMs = minHold;
     }
   });
 

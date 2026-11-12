@@ -178,6 +178,8 @@ export class Background {
     if (!l) return;
     for (let x = this.layerX.get(l.name)!; x < wArt + sp.width; x += l.width) {
       for (let i = 0; i < sp.mount!.points.length; i++) {
+        // Additive cones are big overdraw (each a 360 × 900 px quad): every other mount point is enough to light the hall.
+        if (sp.blend === 'add' && i % 2) continue;
         const [mx, my] = sp.mount!.points[i];
         this.put(sp, this.left + (x + mx) * S, (l.y + my - this.gy) * S, i);
       }

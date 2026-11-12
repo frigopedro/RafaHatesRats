@@ -101,6 +101,7 @@ export interface Level {
   halfW: number[]; // per hazard: hitbox half-width in blocks, including the margin inflation
   reach: number[]; // per hazard: largest |beat − hazard.beat| at which it can touch Rafa
   maxReach: number;
+  minHold: [number, number]; // PHYS.minHoldMs in ticks at this BPM: [normal, Gelol overdrive]
 }
 
 /** One sim tick of input. */

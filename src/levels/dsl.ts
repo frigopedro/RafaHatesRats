@@ -31,9 +31,10 @@ export const attack = (h: HazardEvent, name: string, warn = 1, bpb = 4, ahead = 
 export const bossMove = (beat: number, name: string): ChartEvent => ({ t: 'cue', beat, cue: 'bossAttack', attack: name });
 
 /** `n` golden dumbbells on the exact arc of a jump pressed at `pressBeat` and held `holdBeats` (0 = tap),
- *  centred on Rafa's body so following the arc collects them all. */
-export function coinArc(pressBeat: number, holdBeats: number, n: number): ItemEvent[] {
-  const ys = jumpCurve(Math.round(holdBeats * TPB));
+ *  centred on Rafa's body so following the arc collects them all. A tap's arc depends on the level's `bpm` (the
+ *  minimum hold is real time). */
+export function coinArc(pressBeat: number, holdBeats: number, n: number, bpm = 120): ItemEvent[] {
+  const ys = jumpCurve(Math.round(holdBeats * TPB), bpm);
   return Array.from({ length: n }, (_, i) => {
     const k = Math.round(((i + 1) / (n + 1)) * (ys.length - 1));
     return item(pressBeat + k / TPB, 'coin', ys[k] + (PLAYER.h - ITEM_SIZE) / 2);

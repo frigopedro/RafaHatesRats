@@ -52,13 +52,13 @@ export const level2: LevelDef = {
     ...coinLine(5, 0.5, 5, 0.3),
 
     // Warm-up (8–40): one small thing at a time, on the march's accents.
-    hz(13, 'kneeler'), ...coinArc(12.65, HOP, 3),
+    hz(13, 'kneeler'), ...coinArc(12.65, HOP, 3, 132),
     hz(17, 'flowerBasket'),
-    hz(21, 'hymnBooks'), ...coinArc(20.65, HOP, 3),
+    hz(21, 'hymnBooks'), ...coinArc(20.65, HOP, 3, 132),
     hz(25, 'kneeler'),
     hz(27.5, 'flowerBasket'),
     hz(30, 'hymnBooks'),
-    hz(33, 'flowerBasket'), ...coinArc(32.65, HOP, 3),
+    hz(33, 'flowerBasket'), ...coinArc(32.65, HOP, 3, 132),
     hz(35.5, 'kneeler'),
     hz(38, 'hymnBooks'),
 

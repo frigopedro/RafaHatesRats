@@ -30,7 +30,7 @@ The players are casual, on phones. Every level must be beatable using only big j
 
 Everything is in **beats and blocks**. 1 block = 96 px at the logical 1080 px view height; Rafa is pinned 28% from the left; x = beat × 4 blocks, so an event charted at beat N is met exactly on beat N.
 
-- **Tap = hop** (~0.78 beat, ~2.2 blocks high, ~3.1 long). **Hold = big jump** (1.0 beat, 3.0 high, 4 long). Buffer 0.25 beat, coyote 0.15 beat.
+- **Tap = hop**, **hold = big jump** (1.0 beat, 3.0 blocks high, 4 long). The cutoff is 150 ms of real time at any tempo (`PHYS.minHoldMs`), so a natural phone tap is always a hop; the hop is ~0.9 beat, ~2.7 high, ~3.6 long. Buffer 0.25 beat, coyote 0.15 beat.
 - Hitboxes are forgiving: player 0.7 × 1.3; small hazards ≤ 0.7 × 0.6; big ≤ 1.4 × 1.2. **High hazards** (bottom ≥ 1.7 blocks): stay on the ground.
 - Hazard behaviours, each a pure function of the beat: `static`, `drop`, `run`, `bounce`, `lob`, `fly`, `pulse`. `drop`/`lob` land `lead` beats before Rafa arrives, with a ground shadow as warning.
 - One-way platforms (static or moving) and ground holes exist in the engine. Levels 1–3 use **no holes**; platforms are optional.

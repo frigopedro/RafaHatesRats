@@ -17,12 +17,12 @@ describe.each(LEVELS)('level $id — $name', (def) => {
   // Levels 1–3's kindness rules make the hop optional; level1-gym/level2-church/level3-party.test.ts prove they are
   // beatable with big jumps only.
   it.skipIf(def.id === 'church' || def.id === 'gym' || def.id === 'party')('needs the hop: with every jump a full big jump it is not beatable', () => {
-    const minHold = PHYS.minHoldTicks;
-    PHYS.minHoldTicks = Infinity; // releasing never cuts the rise
+    const minHold = PHYS.minHoldMs;
+    PHYS.minHoldMs = Infinity; // releasing never cuts the rise
     try {
       expect(solve(def, { marginMs: def.marginMs }).ok).toBe(false);
     } finally {
-      PHYS.minHoldTicks = minHold;
+      PHYS.minHoldMs = minHold;
     }
   });
   it('needs the big jump: with no jump bigger than a hop it is not beatable', () => {

@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { PHYS, TICKS_PER_BEAT as TPB } from '../config';
+import { OVERDRIVE, PHYS, TICKS_PER_BEAT as TPB } from '../config';
 import type { ChartEvent, HazardEvent, LevelDef, SimEvent, SimState } from '../types';
 import { hazardPos, type Pos } from './behaviors';
-import { compileLevel, createState, jumpCurve, step } from './sim';
+import { compileLevel, createState, jumpCurve, minHoldTicks, step } from './sim';
 
 const level = (chart: ChartEvent[], ground: [number, number][] = [[-10, 100]]): LevelDef => ({
   id: 't', name: 't', theme: 'gym', rafa: 'standing', bpm: 120, blocksPerBeat: 4, lengthBeats: 40,
@@ -32,16 +32,21 @@ describe('jump physics vs tuning table', () => {
     expect(Math.max(...ys)).toBeCloseTo(3, 1);
     expect(airtime(ys) * 4).toBeCloseTo(4, 0);
   });
-  it('hop (tap): ~0.78 beat, ~3.1 blocks long, ~2.2 blocks apex — clearly lower and shorter than the big jump', () => {
+  it('hop (tap) at 120 BPM: ~0.88 beat, ~3.5 blocks long, ~2.6 blocks apex — lower and shorter than the big jump', () => {
     const ys = jumpCurve(0);
-    expect(airtime(ys)).toBeCloseTo(0.78, 1);
-    expect(airtime(ys) * 4).toBeCloseTo(3.1, 0);
-    expect(Math.max(...ys)).toBeGreaterThan(2.1);
-    expect(Math.max(...ys)).toBeLessThan(2.3);
+    expect(airtime(ys)).toBeCloseTo(0.88, 1);
+    expect(airtime(ys) * 4).toBeCloseTo(3.5, 0);
+    expect(Math.max(...ys)).toBeGreaterThan(2.5);
+    expect(Math.max(...ys)).toBeLessThan(2.8);
+  });
+  it('the minimum hold is real time: 150 ms at any BPM, also under Gelol', () => {
+    expect(minHoldTicks(120)).toBe(36);
+    expect(minHoldTicks(144)).toBe(43);
+    expect((minHoldTicks(120, OVERDRIVE.rate) / TPB / OVERDRIVE.rate) * 500).toBeCloseTo(PHYS.minHoldMs, -1);
   });
   it('any tap shorter than the minimum hold gives the same hop; longer holds go higher', () => {
-    expect(jumpCurve(PHYS.minHoldTicks - 1)).toEqual(jumpCurve(0));
-    expect(Math.max(...jumpCurve(PHYS.minHoldTicks + 12))).toBeGreaterThan(Math.max(...jumpCurve(0)) + 0.2);
+    expect(jumpCurve(minHoldTicks(120) - 1)).toEqual(jumpCurve(0));
+    expect(Math.max(...jumpCurve(minHoldTicks(120) + 12))).toBeGreaterThan(Math.max(...jumpCurve(0)) + 0.1);
   });
 });
 
@@ -128,7 +133,7 @@ describe('collisions and items', () => {
     expect(run(level([dumbbell]), [Math.round(3.65 * TPB)], 6).s.dead).toBe(false);
   });
   it('a big hazard needs the big jump: a hop has no ±60 ms window over it, a big jump does', () => {
-    const rack: ChartEvent = { t: 'hazard', beat: 4, kind: 'pewEnd', b: 'static' }; // 1.0 × 1.2, like a full-size rack
+    const rack: ChartEvent = { t: 'hazard', beat: 4, kind: 'cakeTable', b: 'static' }; // 1.2 × 1.2: a full-size big obstacle
     const slack = Math.round(0.12 * TPB); // 60 ms at 120 BPM
     const survives = (hold: number) => {
       const ok = new Set<number>();

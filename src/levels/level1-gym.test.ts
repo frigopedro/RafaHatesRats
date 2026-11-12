@@ -18,12 +18,12 @@ describe('level 1 — kindness rules', () => {
   });
 
   it('is beatable holding every jump (the full jump is always safe)', () => {
-    const minHold = PHYS.minHoldTicks;
-    PHYS.minHoldTicks = Infinity; // releasing never cuts the rise
+    const minHold = PHYS.minHoldMs;
+    PHYS.minHoldMs = Infinity; // releasing never cuts the rise
     try {
       expect(solve(def, { marginMs: def.marginMs }).ok).toBe(true);
     } finally {
-      PHYS.minHoldTicks = minHold;
+      PHYS.minHoldMs = minHold;
     }
   });
 

@@ -156,6 +156,38 @@ const muletaSection = rafaRow('Rafa — muleta, level 2 (rafaMuleta.ts, real sim
     };
   });
 
+// --- Gelol glow check: the three Rafas mid-overdrive on each level's backdrop (gym teal, church plaster over dark
+// pews, party dark), at game scale ---
+const BACKDROPS: [string, number, number][] = [['gym', 0x134a4e, 0x134a4e], ['church', 0xcdbb9c, 0x4a3a36], ['party', 0x140e22, 0x140e22]];
+const glowSection: Section = {
+  title: 'Gelol glow (one baked quad, additive) on gym / church / party backdrops — gym Rafa, crutch Rafa, wheelchair Rafa',
+  height: TITLE + 340,
+  preload: (scene) => {
+    for (const a of [RAFAGYM_ATLAS, RAFAMULETA_ATLAS, RAFA_ATLAS]) if (!scene.textures.exists(a)) scene.load.atlas(a, `art/${a}.png`, `art/${a}.json`);
+  },
+  create(scene, top, g) {
+    const w = W / 9, groundY = top + TITLE + 300;
+    const cells = BACKDROPS.flatMap(([name, wall, low], bi) => [0, 1, 2].map((kind) => {
+      const k = bi * 3 + kind, x = k * w;
+      label(scene, x + 8, top + TITLE + 6, `${name}: ${['gym', 'muleta', 'wheelchair'][kind]}`).setDepth(1).setColor(wall === 0xcdbb9c ? '#111' : '#eee');
+      const gym = kind === 0 ? createRafaGym(scene) : null, mul = kind === 1 ? createRafaMuleta(scene) : null, wc = kind === 2 ? createRafa(scene) : null;
+      const parts = gym ? [gym.root] : mul ? [mul.glow, mul.body] : [wc!.root, wc!.wheel];
+      return { x, wall, low, gym, mul, wc, holder: scene.add.container(0, groundY, parts) };
+    }));
+    return (beat) => {
+      const lb = 1.25 + (beat % 1), p = C.gelol.at(lb), dist = lb * 4 * B; // inside the overdrive, past the ignition beat
+      for (const { x, wall, low, gym, mul, wc, holder } of cells) {
+        g.fillStyle(wall, 1).fillRect(x, top + TITLE, w, 200).fillStyle(low, 1).fillRect(x, top + TITLE + 200, w, 140);
+        g.fillStyle(0x2a2430, 1).fillRect(x, groundY, w, 6);
+        if (gym) drawRafaGym(gym, p.s, p.fx, lb, dist, 0, true, lb * MS_PER_BEAT, 0, true);
+        if (mul) drawRafaMuleta(mul, p.s, p.fx, lb, dist, 0, true, lb * MS_PER_BEAT, 0, true);
+        if (wc) drawRafa(wc, p.s, p.fx, lb, dist, 0, true, lb * MS_PER_BEAT, 0, true);
+        holder.x = x + w / 2 - 10 - dist;
+      }
+    };
+  },
+};
+
 // --- Sheet characters driven by a table from src/art/sheets.ts; one-shot animations replay every 2 beats ---
 function sheetSection<K extends string>(title: string, atlas: string, table: Record<K, SheetAnim>, cases: { name: K; moving?: boolean }[]): Section {
   const ROW = [TITLE + 520, 380]; // row heights: the first row has room for a leap arc
@@ -285,7 +317,7 @@ function filmSection(name: string): Section {
   };
 }
 const film = new URLSearchParams(location.search).get('film');
-const SECTIONS: Section[] = film ? [filmSection(film)] : [gymSection, fabinhoGymSection, muletaSection, weddingSection, rafaSection, fabinhoSection];
+const SECTIONS: Section[] = film ? [filmSection(film)] : [glowSection, gymSection, fabinhoGymSection, muletaSection, weddingSection, rafaSection, fabinhoSection];
 const ATLASES = film ? [] : ['rafagym', 'fabinhogym', 'rafamuleta', 'giovanni', 'nathalia', 'murilo', 'rafa', 'fabinho']; // static "all frames" listing below the canvas
 
 class Gallery extends Phaser.Scene {
@@ -313,7 +345,7 @@ class Gallery extends Phaser.Scene {
 
 const H = SECTIONS.reduce((t, s) => t + s.height, 0);
 new Phaser.Game({
-  type: Phaser.WEBGL, // preFX glow
+  type: Phaser.WEBGL, // as the game renders
   parent: 'game',
   width: W,
   height: H,

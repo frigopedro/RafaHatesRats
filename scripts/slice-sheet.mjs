@@ -481,7 +481,37 @@ for (const s of gym) {
 }
 
 fs.mkdirSync(UI, { recursive: true });
-writeAtlas('rafa', 'art-src/characters/rafa-sheet.png', [...rafa, ...derived], RAFA_ANCHOR);
+// Gelol glow: one soft warm silhouette per Rafa, baked here from a representative frame (alpha grown and blurred,
+// three box-blur passes) and drawn behind her as a single additive quad — no FX passes at runtime.
+function glowFrom(png, [ax, ay], pad = 18, radius = 6) {
+  const w = png.width + 2 * pad, h = png.height + 2 * pad;
+  let a = new Float32Array(w * h);
+  for (let y = 0; y < png.height; y++) for (let x = 0; x < png.width; x++) a[(y + pad) * w + x + pad] = png.data[(y * png.width + x) * 4 + 3] / 255;
+  for (let pass = 0; pass < 3; pass++) for (const horiz of [true, false]) {
+    const b = new Float32Array(w * h);
+    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+      let sum = 0;
+      for (let k = -radius; k <= radius; k++) {
+        const xx = horiz ? x + k : x, yy = horiz ? y : y + k;
+        if (xx >= 0 && yy >= 0 && xx < w && yy < h) sum += a[yy * w + xx];
+      }
+      b[y * w + x] = sum / (2 * radius + 1);
+    }
+    a = b;
+  }
+  const out = new PNG({ width: w, height: h });
+  for (let i = 0; i < w * h; i++) {
+    const v = Math.min(1, a[i] * 1.8);
+    if (v > 0.004) out.data.set([255, Math.round(120 + 60 * v), 40, Math.round(255 * v)], i * 4); // yellower at the core
+  }
+  return { name: 'glow', png: out, w, h, anchor: [ax + pad, ay + pad] };
+}
+const addGlow = (list, anchors, frame) => {
+  const g = glowFrom(byName(list)[frame].png, anchors[frame]);
+  anchors.glow = g.anchor;
+  return g;
+};
+writeAtlas('rafa', 'art-src/characters/rafa-sheet.png', [...rafa, ...derived, addGlow(rafa, RAFA_ANCHOR, 'push_0')], RAFA_ANCHOR);
 writeAtlas('fabinho', 'art-src/characters/fabinho-sheet.png', fab, FABINHO_ANCHOR);
 // --- Gym Rafa: cut-out parts for the run rig (src/game/rafaGym.ts). The sheet's five run frames are near-copies of one
 // mid-stride pose, so the run is rebuilt from her own pixels: upper body from run_1, a straight striped leg from run_4
@@ -572,7 +602,7 @@ for (const far of [false, true]) {
 }
 addPart('shoe', cutPart(GB.walk_0.png, (x, y) => (x >= 53 && y >= 162 ? 1 : 0), RIG.ankle, { outline: false }));
 
-writeAtlas('rafagym', 'art-src/characters/rafa-sheet-gym.PNG', [...gym, ...rigParts], RAFAGYM_ANCHOR);
+writeAtlas('rafagym', 'art-src/characters/rafa-sheet-gym.PNG', [...gym, ...rigParts, addGlow(gym, RAFAGYM_ANCHOR, 'run_1')], RAFAGYM_ANCHOR);
 
 // Sheet characters with the standard layout: x = centre of the face (skin in the top 30% of the sprite), y = feet.
 // In-game scale is each sheet's small row used 1:1; `g_` frames are that scale: small-row frames are copied as they
@@ -637,8 +667,9 @@ const muleta = slice('art-src/characters/rafaela-muleta.PNG', RAFAMULETA_SHEET);
   muleta.splice(i, 1, part(0, cut, 'face_laugh'), part(cut, s.w, 'face_grin'));
 }
 const RAFAMULETA_ANCHOR = standardAnchors(muleta);
-writeAtlas('rafamuleta', 'art-src/characters/rafaela-muleta.PNG',
-  [...muleta, ...gPoses(byName(muleta), RAFAMULETA_ANCHOR, ['pose_idle', 'pose_armsup', 'pose_point', 'pose_phone'])], RAFAMULETA_ANCHOR);
+writeAtlas('rafamuleta', 'art-src/characters/rafaela-muleta.PNG', [...muleta,
+  ...gPoses(byName(muleta), RAFAMULETA_ANCHOR, ['pose_idle', 'pose_armsup', 'pose_point', 'pose_phone']),
+  addGlow(muleta, RAFAMULETA_ANCHOR, 'walk_0')], RAFAMULETA_ANCHOR);
 writeUi(muleta, [['face_smile', 'face_smile'], ['face_laugh', 'face_laugh'], ['face_grin', 'face_grin'],
   ['face_shocked', 'face_shocked'], ['face_angry', 'face_angry'], ['turn_34', 'turn_34'], ['pose_armsup', 'armsup'],
   ['pose_phone', 'phone'], ['dance_0', 'dance']].map(([n, f]) => [n, `rafamuleta_${f}`]));

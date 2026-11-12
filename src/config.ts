@@ -3,12 +3,15 @@ import type { HazardDef, HazardKind } from './types';
 export const TICKS_PER_BEAT = 120;
 
 /** Jump physics, in blocks and beats. Big jump (held to apex): 1.0 beat airtime, 3.0 blocks apex, 4 blocks long.
- *  Hop (any tap up to the min hold): ~0.78 beat, ~2.2 blocks apex, ~3.1 blocks long. Longer holds land in between. */
+ *  Hop (any tap up to the 150 ms min hold): 120 BPM 0.88 beat / 2.64 apex / 3.5 long; 132 BPM 0.90 / 2.75 / 3.6;
+ *  144 BPM 0.92 / 2.82 / 3.7 (under Gelol 0.94–0.98 beat, ~2.9–3.0 apex). Longer holds land in between. */
 export const PHYS = {
   gravity: 24, // blocks/beat²
   jumpVel: 12, // blocks/beat at takeoff
   cut: 0.5, // vy multiplier when the button is released while rising
-  minHoldTicks: 24, // 0.2 beat (100 ms at 120 BPM): every natural tap gives the same hop; release cuts the rise after this
+  // Real time, not beats, so every natural phone tap (80–150 ms) gives the same hop at any tempo and under Gelol;
+  // each level compiles it to ticks for its BPM (Level.minHold). Release cuts the rise after this.
+  minHoldMs: 150,
   bufferTicks: 30, // 0.25 beat: a press this early before landing still jumps on landing
   coyoteTicks: 18, // 0.15 beat: a ground jump is still allowed this long after leaving the edge
   holeDepth: 0.4, // blocks below ground top: past this Rafa is in the hole (dead); above it she steps back up

@@ -57,6 +57,7 @@ export function compileLevel(def: LevelDef, marginMs = 0): Level {
   return {
     def, hazards, items, platforms, cues, marginMs, halfW, reach,
     maxReach: Math.max(0, ...reach),
+    minHold: [minHoldTicks(def.bpm, 1), minHoldTicks(def.bpm, OVERDRIVE.rate)],
     ground: def.ground.map(([a, b]) => [a * bpb, b * bpb] as [number, number]).sort((p, q) => p[0] - q[0]),
     endTick: Math.round(def.lengthBeats * TPB),
   };
@@ -151,7 +152,7 @@ export function step(L: Level, s: SimState, inp: InputFrame): SimEvent[] {
   if (!s.cutDone) {
     s.jumpTicks++;
     if (s.vy <= 0) s.cutDone = true;
-    else if (!s.held && s.jumpTicks >= PHYS.minHoldTicks) {
+    else if (!s.held && s.jumpTicks >= L.minHold[overdriveActive(s, t) ? 1 : 0]) {
       s.vy *= PHYS.cut;
       s.cutDone = true;
     }
@@ -255,11 +256,16 @@ export function step(L: Level, s: SimState, inp: InputFrame): SimEvent[] {
   return EV;
 }
 
-/** Rafa's height per tick for a jump from flat ground: index 0 = takeoff tick, last = landing (0).
+/** PHYS.minHoldMs as whole sim ticks at `bpm`, with the clock running ×`rate` (Gelol overdrive). */
+export function minHoldTicks(bpm: number, rate = 1): number {
+  return Math.round((PHYS.minHoldMs / 60000) * bpm * rate * TPB);
+}
+
+/** Rafa's height per tick for a jump from flat ground at `bpm`: index 0 = takeoff tick, last = landing (0).
  *  `holdTicks` = how long the button stays down (0 = tap). Used by the chart DSL to put coins on real arcs. */
-export function jumpCurve(holdTicks: number): number[] {
+export function jumpCurve(holdTicks: number, bpm = 120): number[] {
   const L = compileLevel({
-    id: '', name: '', theme: 'gym', rafa: 'standing', bpm: 120, blocksPerBeat: 1, lengthBeats: 1e6,
+    id: '', name: '', theme: 'gym', rafa: 'standing', bpm, blocksPerBeat: 1, lengthBeats: 1e6,
     songId: '', marginMs: 0, sections: [], ground: [[-1e6, 1e6]], chart: [],
   });
   const s = createState(L);

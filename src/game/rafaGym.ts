@@ -7,7 +7,7 @@
 import type Phaser from 'phaser';
 import { animFrame, RAFAGYM, RAFAGYM_ATLAS } from '../art/sheets';
 import { PHYS, TICKS_PER_BEAT as TPB, VIEW } from '../config';
-import type { RafaFx, RafaState } from './rafaView';
+import { createGelolGlow, drawGelolGlow, type RafaFx, type RafaState } from './rafaView';
 
 /** Her head sits this many px right of the hitbox centre (she leans into the run), so the hitbox covers her body. */
 export const HEAD_DX = 16;
@@ -137,21 +137,15 @@ export interface RafaGymSprite {
   root: Phaser.GameObjects.Container; // carries position and the death spin
   body: Phaser.GameObjects.Image; // single-frame poses
   rig: Phaser.GameObjects.Image[]; // the run (createLegRig order)
-  // Gelol outline: a glow-only (knockout) twin behind each part. Per-sprite preFX passes are small; a postFX on the
-  // container would be one full-screen pass every frame.
-  halos: { img: Phaser.GameObjects.Image; glow: Phaser.FX.Glow | undefined }[];
+  glow: Phaser.GameObjects.Image; // Gelol: the atlas's baked soft glow, behind her
 }
 
 export function createRafaGym(scene: Phaser.Scene): RafaGymSprite {
   const rig = createLegRig(scene, RAFAGYM_ATLAS, FAR_TINT);
   const body = scene.add.image(0, 0, RAFAGYM_ATLAS, 'stand_0');
-  const halos = [...rig, body].map((src) => {
-    const img = scene.add.image(0, 0, RAFAGYM_ATLAS, src.frame.name).setVisible(false);
-    img.preFX?.setPadding(14);
-    return { img, glow: img.preFX?.addGlow(0xffa23a, 4, 0, true, 0.1, 10) };
-  });
-  const root = scene.add.container(0, 0, [...halos.map((h) => h.img), ...rig, body]);
-  return { root, body, rig, halos };
+  const glow = createGelolGlow(scene, RAFAGYM_ATLAS);
+  const root = scene.add.container(0, 0, [glow, ...rig, body]);
+  return { root, body, rig, glow };
 }
 
 /** Poses Rafa. `beat` = render beat; (x, y) = world px of her hitbox bottom-centre. `started` = false before the run
@@ -204,14 +198,6 @@ export function drawRafaGym(r: RafaGymSprite, s: RafaState, fx: RafaFx, beat: nu
   const tint = dead && (nowMs - deadMs) / 1000 < 0.12 ? 0xff8080 : 0xffffff;
   body.setTint(tint);
   rig.forEach((p, i) => p.setTint(tint !== 0xffffff ? tint : i < 3 ? FAR_TINT : 0xffffff));
-  // Gelol: each visible part's halo twin copies it; drawn behind all parts, the halos merge into one outline.
-  const glow = overdrive && !dead, strength = 3 + 2 * (1 - (beat - Math.floor(beat))); // pulses on the beat
-  [...rig, body].forEach((src, i) => {
-    const { img, glow: g } = r.halos[i];
-    img.setVisible(glow && src.visible);
-    if (!img.visible) return;
-    img.setFrame(src.frame.name).setPosition(src.x, src.y).setRotation(src.rotation).setScale(src.scaleX, src.scaleY);
-    if (g) g.outerStrength = strength;
-  });
+  drawGelolGlow(r.glow, overdrive && !dead, beat);
   root.setPosition(x + HEAD_DX + dx, y + dy).setRotation(rot).setAlpha(alpha);
 }

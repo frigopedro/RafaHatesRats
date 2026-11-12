@@ -8,7 +8,7 @@
 import type Phaser from 'phaser';
 import { animFrame, RAFAMULETA, RAFAMULETA_ATLAS } from '../art/sheets';
 import { PHYS, TICKS_PER_BEAT as TPB, VIEW } from '../config';
-import type { RafaFx, RafaState } from './rafaView';
+import { createGelolGlow, drawGelolGlow, type RafaFx, type RafaState } from './rafaView';
 
 /** Her face sits this many px right of the hitbox centre, so the hitbox covers her and the crutches. */
 export const HEAD_DX = 8;
@@ -33,15 +33,12 @@ export function crutchGait(phase: number, rate: number): { step: number; planted
 
 export interface RafaMuletaSprite {
   body: Phaser.GameObjects.Image;
-  glow: Phaser.FX.Glow | undefined; // Gelol outline (WebGL only); one sprite, so a preFX pass is enough
+  glow: Phaser.GameObjects.Image; // Gelol: the atlas's baked soft glow, behind her
 }
 
 export function createRafaMuleta(scene: Phaser.Scene): RafaMuletaSprite {
-  const body = scene.add.image(0, 0, RAFAMULETA_ATLAS, 'g_pose_idle');
-  body.preFX?.setPadding(14);
-  const glow = body.preFX?.addGlow(0xffa23a, 4, 0, false, 0.1, 10);
-  if (glow) glow.active = false;
-  return { body, glow };
+  const glow = createGelolGlow(scene, RAFAMULETA_ATLAS); // created first: drawn behind her
+  return { body: scene.add.image(0, 0, RAFAMULETA_ATLAS, 'g_pose_idle'), glow };
 }
 
 /** Poses Rafa. `beat` = render beat; (x, y) = world px of her hitbox bottom-centre. `started` = false before the run
@@ -93,9 +90,7 @@ export function drawRafaMuleta(r: RafaMuletaSprite, s: RafaState, fx: RafaFx, be
 
   const { body } = r;
   body.setFrame(frame).setTint(dead && (nowMs - deadMs) / 1000 < 0.12 ? 0xff8080 : 0xffffff);
-  if (r.glow) {
-    r.glow.active = overdrive && !dead;
-    r.glow.outerStrength = 3 + 2 * (1 - (beat - Math.floor(beat))); // pulses on the beat
-  }
   body.setPosition(x + HEAD_DX + dx, y + dy).setRotation(rot).setScale(1, sy).setAlpha(alpha);
+  drawGelolGlow(r.glow, overdrive && !dead, beat);
+  r.glow.setPosition(body.x, body.y).setRotation(rot);
 }
