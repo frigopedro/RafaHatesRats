@@ -21,10 +21,11 @@ export const bossExit = (beat: number): ChartEvent => ({ t: 'cue', beat, cue: 'b
 export const rep = (from: number, every: number, n: number, f: (beat: number, i: number) => ChartEvent | ChartEvent[]) =>
   Array.from({ length: n }, (_, i) => f(from + i * every, i)).flat();
 
-/** Boss attack: the hazard plus its telegraph cue `warn` beats before the boss releases it (see releaseBeat).
- *  The boss view pairs the cue with the first hazard of the attack's kind released at or after the cue. */
-export const attack = (h: HazardEvent, name: string, warn = 1, bpb = 4): ChartEvent[] =>
-  [{ t: 'cue', beat: releaseBeat(h, bpb, BOSS_AHEAD) - warn, cue: 'bossAttack', attack: name }, h];
+/** Boss attack: the hazard plus its telegraph cue `warn` beats before the boss releases it (see releaseBeat) from
+ *  `ahead` blocks in front of Rafa (the boss's BossDef.ahead). The boss view pairs the cue with the first hazard of the
+ *  attack's kind released at or after the cue. */
+export const attack = (h: HazardEvent, name: string, warn = 1, bpb = 4, ahead = BOSS_AHEAD): ChartEvent[] =>
+  [{ t: 'cue', beat: releaseBeat(h, bpb, ahead) - warn, cue: 'bossAttack', attack: name }, h];
 
 /** A boss move with no hazard (e.g. a taunt between phases). */
 export const bossMove = (beat: number, name: string): ChartEvent => ({ t: 'cue', beat, cue: 'bossAttack', attack: name });

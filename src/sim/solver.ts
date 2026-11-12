@@ -47,12 +47,15 @@ function key(s: SimState): string {
  *  buffered presses would start jumps off the 1/8-beat grid so the frontier never re-converges, and the pré-treino
  *  air jump is "never required" by design, so a proof must not use it. Holding only matters while the early-release
  *  cut can still shorten the rise. The solver may therefore miss some wins, never invent one. */
-function actions(s: SimState): number[] {
+function actions(s: SimState, hold?: number): number[] {
+  if (s.held && hold !== undefined) return !s.cutDone && s.jumpTicks < hold ? [HOLD] : [RELEASE];
   if (s.held) return s.cutDone ? [RELEASE] : [HOLD, RELEASE];
   return s.support >= 0 || s.coyote > 0 ? [NONE, PRESS] : [NONE];
 }
 
-export function solve(def: LevelDef, opts: { marginMs?: number; startBeat?: number } = {}): SolveResult {
+/** `holdTicks` forces every jump to be held that long (rounded up to the 1/8-beat decision grid), e.g. to prove that
+ *  sloppy in-between taps are safe. */
+export function solve(def: LevelDef, opts: { marginMs?: number; startBeat?: number; holdTicks?: number } = {}): SolveResult {
   const L: Level = compileLevel(def, opts.marginMs ?? 0);
   let layer: Node[] = [{ s: createState(L, opts.startBeat), parent: -1, act: NONE }];
   const history: { parent: number; act: number; tick: number }[][] = [];
@@ -63,7 +66,7 @@ export function solve(def: LevelDef, opts: { marginMs?: number; startBeat?: numb
     const next = new Map<string, Node>();
     for (let i = 0; i < layer.length; i++) {
       const base = layer[i].s;
-      for (const act of actions(base)) {
+      for (const act of actions(base, opts.holdTicks)) {
         const s = cloneState(base);
         for (let k = 0; k < DECISION_TICKS && !s.dead && !s.won; k++) {
           const ev = step(L, s, k === 0 ? FRAMES[act] : KEEP[+s.held]);

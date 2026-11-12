@@ -12,13 +12,19 @@ Rafa and Fabinho compete for first place in Gym Rats. She wins, and wrecks her k
 |---|---|---|---|
 | id / theme / songId | `gym` | `church` | `party` |
 | Place | The gym | The church, down the aisle | The wedding reception |
-| Rafa (`LevelDef.rafa`) | `standing` — on her feet | `crutches` | `wheelchair` |
-| With / against | Boss: **Fabinho** | Companion: **Giovanni**. **No boss** — reach the altar before the bride | Boss: **O Aranha da Carreta** on his party train |
+| Rafa (`LevelDef.rafa`) | `standing` — gym clothes (`rafaGym`) | `crutches` — brown dress (`rafaMuleta`) | `wheelchair` — sage dress (`rafaView`) |
+| With / against | Boss: **Fabinho** (in gym clothes) | Companion: **Giovanni**. **No boss** — reach the altar before the bride, **Nathalia**, who runs in behind her as a cosmetic chaser; **Murilo** waits at the altar | Boss: **O Aranha da Carreta** on his party train |
 | BPM / length | 120 / 144 beats | 132 / 176 beats | 144 / 208 beats |
-| Timing margin (solver) | ±60 ms | ±45 ms | ±35 ms |
+| Timing margin (solver) | ±110 ms | ±75 ms | ±55 ms |
 | Ending | "1º LUGAR!" … then her knee goes: "LCA destruído." | She takes her place at the altar beside Nathalia and Murilo: "Chegou a tempo, madrinha!" | Gelol, she rams him into the train's speaker, then dances |
 
 Section template for every level (names are shared with the songs): `intro` (count-in, no hazards) → `warmup` (single obstacles, "TOQUE!" / "SEGURE!" hint signs in level 1) → `main` (combos, Whey, Pré-treino) → `gelol` (Gelol corridor) → `bossEnter` → `boss1` → `boss2` → `boss3` → `finale`. Level 2 has no boss: its `bossEnter`…`boss3` are the final dash ("A noiva tá chegando!").
+
+## 1b. Difficulty (decided after the first playtest: "level 1 is too difficult")
+
+The players are casual, on phones. Every level must be beatable using only big jumps (the hop is optional, for coins): no hop-only traps, any jump length clears a small obstacle. Big-jump-only obstacles are at most ~1.2–1.3 blocks of hitbox and signposted the first time. Each "don't jump" moment stands alone with clear floor on both sides. Minimum spacing between required actions: level 1 — 2 beats (1.5 in the boss); level 2 — 1.5 (1.25 in the dash); level 3 — 1.25 (1 in the boss). Three Whey shields per level. One new idea at a time.
+
+**Power-ups must show their time left where the player is looking:** a draining bar above Rafa's head (red and blinking on the last 3 beats of Gelol, last 2 of Pré-treino), a large HUD timer, and countdown ticks in the audio.
 
 ## 2. Core rules (as built)
 
@@ -89,12 +95,15 @@ Optional platforms: low stage risers (`plat_stage`).
 | `rafa-sheet.png` | sliced → `public/art/rafa.*` | Wheelchair Rafa: push cycle with spinning wheels, idle, jump, arms-up, pointing, crash; 8 faces for HUD and cards; menu poses |
 | `fabinho-sheet.png` | sliced → `public/art/fabinho.*` | Run, leap, land, throw, push-ups, sit-ups, idle, defeated, sulk; faces |
 | `rafa-sheet-gym.PNG` | present (45 sprites) → `public/art/rafagym.*`, view `src/game/rafaGym.ts` | Level-1 Rafa: black gym clothes and **glasses**. Run ×5, walk ×5, jump sequence, landing, arms-up cheer, squats, push-ups, stretches, sitting hugging her knees (the level-1 ending), 6 faces with glasses for the level-1 HUD and cards |
-| `giovanni-sheet.png` | **expected** | Level-2 companion (walk, jump, arm offered, reaction, faces) |
-| `nathalia-sheet.png`, `murilo-sheet.png` | **expected** | The couple at the altar |
+| `fabinho-v2-gym.PNG` | present (35 sprites) → `public/art/fabinhogym.*`, tables `FABINHOGYM` | The level-1 boss: Fabinho in a black T-shirt, shorts and sneakers. Replaces the earlier `fabinho-gym.PNG`. No push-up or lying poses: his taunts are laughing, arms crossed, checking his phone. The suit Fabinho is his wedding look |
+| `rafaela-muleta.PNG` | present (39) → `public/art/rafamuleta.*`, view `src/game/rafaMuleta.ts` | Level-2 Rafa: two crutches, short brown dress, knee brace. Replaces the derived crutch rig. Includes five dance poses used for her win |
+| `giovanni-sheet.PNG` | present (35) → `public/art/giovanni.*` | Level-2 companion: curly hair, black suit. Walks behind Rafa; pulls out his phone when she crashes |
+| `nathalia-sheet.PNG` | present (37) → `public/art/nathalia.*` | The bride: runs in behind Rafa during the final dash (cosmetic), then stands at the altar |
+| `murilo-sheet.PNG` | present (38) → `public/art/murilo.*` | The groom, grey three-piece suit: waits at the altar |
 
-**Derived from Rafa's wheelchair sheet** (`public/art/kits.*`, `src/game/rafaKits.ts`): her real head and upper body with a drawn standing lower half. `crutches` is level 2's Rafa. The derived `standing` rig was level 1's stand-in and is retired once `rafaGym` is wired in.
+The derived rigs (`rafaKits`, `kits` atlas) are retired: every Rafa now comes from a sheet. In-game scale is each sheet's small row used 1:1 (~170–200 px); the wedding cast's `g_` frames match that.
 
-**Stand-ins while sheets are missing:** Giovanni is simply absent; the couple at the altar are the generic drawn `bride`/`groom` (`public/art/bosses.*`). When a sheet lands, the slicer cuts it and it replaces the stand-in.
+Wedding-sheet frames share one naming scheme (`turn_*`, `pose_*`, `run_*`, `walk_*`, `face_*`); in-game-scale copies are prefixed `g_`. The generic drawn `bride`/`groom` in `public/art/bosses.*` are only a fallback if an atlas is missing.
 
 **Drawn in code** (pixel art, 32 art px per block, stored 1× with `meta.scale: 3`, drawn ×3 nearest): O Aranha da Carreta and the party train (`public/art/bosses.*`), gym props, items, effects (`public/art/props.*`), backgrounds (`public/art/bg/`), logo. `spider-pos1.jpg` / `spider-pos2.jpg` are pose references of real people at a private party: never shipped, copied or committed.
 
@@ -124,7 +133,7 @@ Menu · Fases (three cards) · Ajustes (música, efeitos, reduzir efeitos, apaga
 src/types.ts, config.ts      shared contract and tuning
 src/sim/                     pure deterministic sim + solver (no Phaser, no DOM)
 src/levels/                  dsl.ts + one file per level
-src/game/                    clock, createGame, GameScene, input, rafaView (wheelchair), rafaKits (standing, crutches), views
+src/game/                    clock, createGame, GameScene, input, rafaView (wheelchair), rafaGym (level 1), rafaMuleta (level 2), bosses, companion, background, fx, views
 src/art/sheets.ts            animation tables for sheet characters
 src/audio/                   engine, voices, sequencer, songs, sfx
 src/ui/, src/save.ts         screens and persistence

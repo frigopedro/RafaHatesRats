@@ -16,6 +16,7 @@ const PLAT: Record<Theme, string> = { gym: 'plat_gym', church: 'plat_church', pa
 /** Ceiling height (art px from the view top, manifest coords) that hanging chains run up to. */
 const CEILING: Record<Theme, number> = { gym: 24, church: 16, party: 22 };
 const CHAIN_FROM = 44; // bag_chain starts this many art px above the bag's pivot (its ring)
+const LANTERN_FROM = 35; // same for lantern_chain and the lantern's ring
 
 export interface Art { key: string; frames: string[]; center: boolean }
 
@@ -69,7 +70,10 @@ export class Pool {
 }
 
 const frameAt = (art: Art, beat: number, perBeat: number) => art.frames[Math.floor(beat * perBeat) % art.frames.length];
-const PER_BEAT: Partial<Record<HazardKind, number>> = { rat: 8, frisbee: 8, shockwave: 6, ropeWave: 3 };
+const PER_BEAT: Partial<Record<HazardKind, number>> = { rat: 8, frisbee: 8, shockwave: 6, ropeWave: 3, dove: 8, flowerGirl: 8, ringBearer: 8, photographer: 2, candleStand: 2, sparkler: 8 };
+/** Thrown down from the Aranha's hands on the train roof: drawn this many blocks above their flight line at release,
+ *  settling onto it 2.5 blocks ahead of Rafa, before they can touch her (visual only; the hitbox flies level). */
+const ROOF_DROP: Partial<Record<HazardKind, number>> = { webLine: 2.1, spiderDive: 3.1 };
 
 export class WorldViews {
   private readonly g: G; // grey-box fallback
@@ -77,6 +81,7 @@ export class WorldViews {
   private readonly front: Pool; // hazards
   private readonly items: Pool;
   private readonly pos: Pos = { x: 0, y: 0, on: false };
+  private hideFrom = 0;
   private readonly signs: { x: number; img: Img | null; text: Phaser.GameObjects.Text }[] = [];
   private readonly bpb: number;
   private readonly ceilY: number;
@@ -124,6 +129,7 @@ export class WorldViews {
     const L = this.L, bpb = this.bpb, g = this.g;
     const b0 = left / B / bpb - 1, b1 = right / B / bpb + 1; // visible beats, padded
     g.clear();
+    this.hideFrom = hideFrom;
     this.back.begin();
     this.front.begin();
     this.items.begin();
@@ -162,7 +168,7 @@ export class WorldViews {
         }
       }
       const p = hazardPos(hz, beat, bpb, this.pos);
-      if (!p.on || s.smashed[i] || p.x * B < left - 2 * B || p.x * B > right + 2 * B) continue;
+      if ((!p.on && hz.b !== 'pulse') || s.smashed[i] || p.x * B < left - 2 * B || p.x * B > right + 2 * B) continue;
       if (bossKinds.has(hz.kind) && p.x * B > hideFrom) continue;
       this.drawHazard(hz, p.x * B, -p.y * B, beat);
     }
@@ -196,6 +202,21 @@ export class WorldViews {
       const turn = (hz.speed * beat * B) / (10.5 * ART_SCALE) / (Math.PI / 4);
       frame = art.frames[Math.floor(turn) % art.frames.length];
     } else if (hz.kind === 'frisbee') rot = 0.12 * Math.sin(beat * Math.PI * 4); // a thrown plate wobbles
+    else if (hz.kind === 'photographer' && beat >= hz.beat - 1.25 && beat < hz.beat - 1) frame = 'photographer_flash'; // his tell
+    else if ((hz.b === 'drop' || hz.b === 'lob') && beat < landBeat(hz) && art && this.scene.textures.get(art.key).has(`${d.art}_air`)) {
+      art = findArt(this.scene, `${d.art}_air`)!; // in flight; the floor frame once it lands
+      frame = art.frames[0];
+    } else if (hz.b === 'pulse' && !this.pos.on && art && this.scene.textures.get(art.key).has(`${d.art}_off`)) {
+      art = findArt(this.scene, `${d.art}_off`)!; // between bursts
+      frame = art.frames[0];
+    }
+    const drop = ROOF_DROP[hz.kind];
+    if (drop) {
+      const land = (beat * this.bpb + 2.5) * B, k = Math.min(1, Math.max(0, (x - land) / (this.hideFrom - land)));
+      y -= drop * B * k * (2 - k); // falls from rest at his hands
+      if (hz.kind === 'spiderDive') rot = -beat * Math.PI * 3; // tumbling at her
+      if (hz.kind === 'spiderDive' && x < land - 4 * B) return; // past her he's gone: he climbs back onto the roof (bosses.ts)
+    }
     if (!art) {
       drawHazard(this.g, hz, x, y, false);
       return;
@@ -209,12 +230,13 @@ export class WorldViews {
       }
     }
     if (hz.kind === 'bag') this.chain(x, cy - CHAIN_FROM * ART_SCALE);
+    if (hz.kind === 'lantern') this.chain(x, cy - LANTERN_FROM * ART_SCALE, 'lantern_chain');
     this.front.get(art.key, frame).setPosition(x, cy).setRotation(rot);
   }
 
   /** Tileable chain from (x, y) up to the theme's ceiling. */
-  private chain(x: number, y: number): void {
-    const c = findArt(this.scene, 'bag_chain');
+  private chain(x: number, y: number, name = 'bag_chain'): void {
+    const c = findArt(this.scene, name);
     if (!c) {
       this.g.fillStyle(0x1a1420, 1).fillRect(x - 3, this.ceilY, 6, y - this.ceilY);
       return;

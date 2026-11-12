@@ -256,11 +256,15 @@ export class SongPlayer {
     }
   }
 
-  /** Gelol layer for one step: `prev`/`on` = overdrive at the previous/this step. */
-  overdrive(o: Out, step: number, at: (beat: number) => number, prev: boolean, on: boolean): void {
-    if (step >= this.lengthSteps) return;
+  /** Gelol layer for one step: `prev`/`on` = overdrive at the previous/this step; `countdown` = beats left (3, 2, 1)
+   *  on the window's last three whole beats. With `only: 'countdown'` just the countdown ticks play. */
+  overdrive(o: Out, step: number, at: (beat: number) => number, prev: boolean, on: boolean, countdown = 0): void {
+    if (step >= this.lengthSteps || (this.only && this.only !== 'countdown')) return;
+    const beat = step / STEPS, t = at(beat);
+    if (on && countdown) sfx.countdown(o, t, countdown);
+    if (this.only) return;
     this.locate(step);
-    const p = this.part, beat = step / STEPS, t = at(beat);
+    const p = this.part;
     const ms = (p.chordAt[this.ls % (p.chordAt.length || 1)] ?? [57, 60, 64]).map((m) => m + p.key);
     if (on && !prev) chord(o, t, at(beat + 2) - t, [ms[0] - 12, ms[0] - 5, ms[0]], 0.55, 1); // the Gelol power chord
     if (!on) {

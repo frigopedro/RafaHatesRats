@@ -4,8 +4,8 @@
 
 export type Theme = 'gym' | 'church' | 'party';
 export type RafaKit = 'standing' | 'crutches' | 'wheelchair';
-/** Cosmetic boss actor a level brings (src/game/bosses.ts). Level 3 adds 'aranha'. */
-export type BossId = 'fabinho';
+/** Cosmetic boss actor a level brings (src/game/bosses.ts). */
+export type BossId = 'fabinho' | 'aranha';
 
 export type HazardKind =
   // L1 gym
@@ -77,6 +77,7 @@ export interface LevelDef {
   theme: Theme; // background (public/art/bg/manifest.json themes[theme]) and platform art
   rafa: RafaKit;
   boss?: BossId; // cosmetic actor driven by the chart's bossEnter / bossAttack / bossExit cues
+  companion?: 'giovanni'; // cosmetic actor walking a block behind Rafa (src/game/companion.ts)
   bpm: number;
   blocksPerBeat: number;
   lengthBeats: number; // reaching this beat wins

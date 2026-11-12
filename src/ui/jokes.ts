@@ -12,11 +12,12 @@ const GENERIC = [
 ];
 
 type Face = 'sad' | 'angry' | 'shocked';
-interface Death { lines: string[]; face: Face; boss?: string; px?: boolean; always?: boolean }
+interface Death { lines: string[]; face: Face; boss?: string; fb?: string; px?: boolean; always?: boolean }
 
-const FABINHO: Death = { lines: ['Fabinho 1 × 0 Rafa.', 'Perdeu pra um menino de terno.', 'O Fabinho já contou pra academia inteira.'], face: 'angry', boss: 'fabinho_face_laugh.png', always: true };
+const FABINHO: Death = { lines: ['Fabinho 1 × 0 Rafa.', 'Perdeu pra um menino de terno.', 'O Fabinho já contou pra academia inteira.'], face: 'angry', boss: 'fabinhogym_face_laugh.png', fb: 'fabinho_face_laugh.png', always: true };
 const SPIDER: Death = { lines: ['O Aranha dançou na sua cara.', 'Passinho 1 × 0 Rafa.', 'Presa na teia do funk.'], face: 'angry', boss: 'aranha_pose2.png', px: true, always: true };
-const CHURCH = ['A noiva chegou antes.', 'Madrinha caída no corredor.', 'O Giovanni fingiu que não viu.'];
+const GIOVANNI = 'O Giovanni fingiu que não viu.'; // always shown with Giovanni on his phone
+const CHURCH = ['A noiva chegou antes.', 'Madrinha caída no corredor.', GIOVANNI];
 const church = (...own: string[]): Death => ({ lines: [...own, ...CHURCH], face: 'shocked' });
 const PARTY = ['A festa continua sem você.', 'O DJ nem parou a música.', 'Isso vai pro vídeo do casamento.'];
 const party = (...own: string[]): Death => ({ lines: [...own, ...PARTY], face: 'sad' });
@@ -51,8 +52,11 @@ const BY_CAUSE: Record<string, Death> = {
 const pick = <T>(a: T[]) => a[Math.floor(Math.random() * a.length)];
 
 /** The line, Rafa's face and (for bosses) the boss image for a game-over card. */
-export function deathCard(cause: string, big: boolean): { line: string; face: Face; boss?: string; px?: boolean } {
+export function deathCard(cause: string, big: boolean): { line: string; face: Face; boss?: string; fb?: string; px?: boolean } {
   const d = Object.hasOwn(BY_CAUSE, cause) ? BY_CAUSE[cause] : undefined;
-  if (d && (d.always || Math.random() < 0.6)) return { line: pick(d.lines), face: d.face, boss: d.boss, px: d.px };
+  if (d && (d.always || Math.random() < 0.6)) {
+    const line = pick(d.lines);
+    return line === GIOVANNI ? { line, face: d.face, boss: 'giovanni_phone.png' } : { line, face: d.face, boss: d.boss, fb: d.fb, px: d.px };
+  }
   return { line: pick(GENERIC), face: d?.face ?? (big ? 'shocked' : 'sad') };
 }

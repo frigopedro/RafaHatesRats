@@ -17,6 +17,8 @@ const SFX: Record<string, (o: Out, t: number) => void> = {
   ignite: sfx.ignite, powerDown: sfx.powerDown, whey: sfx.whey, pre: sfx.pre, shieldBreak: sfx.shieldBreak,
   smash: sfx.smash, squeak: sfx.squeak, crash: sfx.crash, bossSting: sfx.bossSting, tick: sfx.tick,
   defeat: sfx.defeat, win: (o, t) => sfx.win(o, t, 69),
+  countdown: (o, t) => [3, 2, 1].forEach((n, i) => sfx.countdown(o, t + i * 0.38, n)),
+  preEnd: (o, t) => (sfx.preTick(o, t), sfx.preTick(o, t + 0.45), sfx.fizzle(o, t + 0.9)),
   click: (o, t) => sfx.ui(o, t, 'click'), back: (o, t) => sfx.ui(o, t, 'back'), start: (o, t) => sfx.ui(o, t, 'start'),
 };
 
@@ -51,23 +53,28 @@ function pack(buf: AudioBuffer) {
   return { wav: btoa(bin), peak, nan };
 }
 
-/** `bars` of one song part, played as a section of exactly that length (so its last-bar fill and riser happen). */
-async function renderPart(songId: string, part: string, { bars = 16, od = false, only = '' } = {}) {
+/** `bars` of one song part, played as a section of exactly that length (so its last-bar fill and riser happen).
+ *  `od`: in Gelol overdrive; `odUntil`: the overdrive ends at that beat (countdown ticks before it, normal tempo
+ *  after it). `only`: solo one track ('countdown' = just the Gelol countdown ticks). */
+async function renderPart(songId: string, part: string, { bars = 16, od = false, only = '', odUntil = Infinity } = {}) {
   const song = SONGS[songId];
-  const spb = 60 / (song.def.bpm * (od ? OVERDRIVE.rate : 1));
+  const spb = 60 / song.def.bpm, spbOd = od ? spb / OVERDRIVE.rate : spb;
   const beats = bars * 4;
-  const ctx = new OfflineAudioContext(1, Math.ceil((LEAD_IN + beats * spb + 1.5) * RATE), RATE);
+  const time = (b: number) => (b < odUntil ? b * spbOd : odUntil * spbOd + (b - odUntil) * spb);
+  const ctx = new OfflineAudioContext(1, Math.ceil((LEAD_IN + time(beats) + 1.5) * RATE), RATE);
   const bus = ctx.createGain();
   bus.gain.value = VOLUME.music ** 2;
   bus.connect(masterChain(ctx));
   const o = makeOut(ctx, bus);
   const player = new SongPlayer(song, { sections: [{ beat: 0, name: part }], lengthBeats: beats, chart: [] }, only || undefined);
-  const at = (b: number) => LEAD_IN - MASTER_DELAY + b * spb; // as the engine sends them
+  const at = (b: number) => LEAD_IN - MASTER_DELAY + time(b); // as the engine sends them
   for (let s = 0; s < beats * STEPS; s++) {
     player.play(o, s, at);
-    if (od && !only) player.overdrive(o, s, at, s > 0, true);
+    if (!od) continue;
+    const b = s / STEPS, left = odUntil - b;
+    player.overdrive(o, s, at, s > 0 && b - 1 / STEPS < odUntil, b < odUntil, b % 1 === 0 && left >= 1 && left <= 3 ? left : 0);
   }
-  return { ...pack(await ctx.startRendering()), spb, leadIn: LEAD_IN };
+  return { ...pack(await ctx.startRendering()), spb: spbOd, leadIn: LEAD_IN };
 }
 
 async function renderSfx(name: string) {

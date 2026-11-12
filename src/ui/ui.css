@@ -149,9 +149,12 @@ h2 { margin: 0; font-size: 1.8rem; letter-spacing: 0.06em; color: var(--gold); t
 .card:disabled .card-art { filter: grayscale(1) brightness(0.55); }
 .card-n { font-size: 0.8rem; color: var(--sage-l); letter-spacing: 0.1em; }
 .card-title { font-size: 1.1rem; font-weight: 700; color: var(--gold); text-shadow: 2px 2px 0 var(--ink); line-height: 1.1; }
-.card-art { flex: 1; min-height: 0; width: 100%; display: flex; align-items: flex-end; justify-content: center; gap: 0.2rem; }
-.card-art img { display: block; min-width: 0; max-height: 100%; max-width: 62%; object-fit: contain; }
-.card-art .boss { max-width: 40%; max-height: 72%; }
+.card-art { flex: 1; min-height: 0; width: 100%; display: flex; align-items: flex-end; justify-content: center; }
+/* Figures sized from one reference height (screens.ts fitFigures + RATIO): the box is the size container; each image is its
+   natural height × --f (= its RATIO per px) × the row scale, the smaller of height-fit and width-fit. */
+.fig { container-type: size; }
+.fig > img { display: block; min-width: 0; width: auto; max-width: none; max-height: none; height: calc(var(--nh, 0) * var(--f, 0) * min(var(--kh, 0) * 1cqh, var(--kw, 0) * 1cqw)); }
+.fig.overlap > img + img { margin-left: calc(var(--nw, 0) * var(--f, 0) * -0.15 * min(var(--kh, 0) * 1cqh, var(--kw, 0) * 1cqw)); } /* fitFigures overlap */
 .card-boss { font-size: 0.85rem; color: var(--sage-l); }
 .stats { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.1rem 0.7rem; font-size: 0.85rem; }
 .stats b { color: var(--gold); }
@@ -219,7 +222,10 @@ input[type='checkbox']:checked { background: var(--teal); box-shadow: inset 0 0 
 /* Gym victory: content that changes on the beat (not an effect, so Reduzir efeitos keeps it). */
 .vit-art { position: relative; display: grid; place-items: center; }
 .vit-art > * { grid-area: 1 / 1; }
-.vit-shock { max-height: 40vh; width: auto; }
+/* Church: the couple flanks Rafa at the shared head scale (.fig), overlapping slightly. */
+.vit-trio { display: flex; align-items: flex-end; justify-content: center; flex: none; width: min(25vw, 15rem); height: min(46vh, 12rem); }
+.vit-trio > img { margin: 0 -0.6rem; filter: drop-shadow(4px 4px 0 rgba(20, 11, 9, 0.6)); }
+.vit-trio > .mid { position: relative; z-index: 1; }
 .then-show { animation: then-show 0s var(--beat) both; }
 .then-hide { animation: then-hide 0s var(--beat) both; }
 @keyframes then-show { from { visibility: hidden; } to { visibility: visible; } }
@@ -239,6 +245,9 @@ body[data-state='over'] .hud .pause { visibility: hidden; width: 6.5rem; }
 .over-art { display: flex; align-items: flex-end; flex: none; }
 .over-face { display: block; height: min(7.5rem, 32vh); width: auto; }
 .over-boss { display: block; height: min(7.5rem, 32vh); width: auto; margin-left: -0.6rem; }
+.over-boss.figure { height: min(9.5rem, 40vh); } /* a whole body beside a face: taller than her face box, so it never reads smaller */
+.over-art.fig { width: min(14rem, 34vw); height: min(7.5rem, 32vh); justify-content: center; }
+.over-art.fig > img { margin: 0; }
 .over-text p { margin: 0; }
 .joke { font-size: 1.4rem; font-weight: 700; line-height: 1.15; }
 .score { margin-top: 0.45rem !important; font-size: 1.1rem; color: var(--sage-l); }
@@ -257,12 +266,25 @@ body[data-state='over'] .hud .pause { visibility: hidden; width: 6.5rem; }
   display: flex;
   align-items: center;
   gap: 0.7rem;
+  flex-wrap: wrap; /* row 2 = the power-up timers, so they can never overlap row 1 */
   padding: max(6px, var(--sat)) max(10px, var(--sar)) 0 max(10px, var(--sal));
   font-weight: 700;
   text-shadow: 2px 2px 0 var(--ink);
 }
+.timers { flex-basis: 100%; display: flex; justify-content: center; align-items: center; gap: 1.2rem; margin-top: -0.2rem; }
+.timer { --tc: #f58a2e; display: flex; align-items: center; gap: 0.45rem; padding: 0.15rem 0.55rem; font-size: 1.5rem; line-height: 1; color: var(--tc); background: rgba(20, 11, 9, 0.72); border: 3px solid var(--ink); box-shadow: 2px 2px 0 var(--ink); } /* readable over any wall */
+.timer.t-pre { --tc: #ff8ae0; font-size: 1.15rem; }
+.timer b { min-width: 1.4ch; text-align: right; }
+.tbar { width: min(34vw, 20rem); height: 1rem; overflow: hidden; background: rgba(12, 8, 23, 0.75); border: 3px solid var(--ink); box-shadow: 2px 2px 0 var(--ink); }
+.t-pre .tbar { width: min(18vw, 10rem); height: 0.7rem; }
+.tbar > i { display: block; height: 100%; background: var(--tc); box-shadow: inset 0 3px 0 rgba(255, 255, 255, 0.35); transform: scaleX(var(--p, 1)); transform-origin: left; }
+.timer.warn { --tc: #ff4a3a; }
+.timer.warn.odd { animation: tick-a 0.3s ease-out; }
+.timer.warn:not(.odd) { animation: tick-b 0.3s ease-out; }
+@keyframes tick-a { from { transform: scale(1.15); } }
+@keyframes tick-b { from { transform: scale(1.15); } }
+.reduce-fx .timer { animation: none !important; }
 .face { flex: none; padding: 5px; }
-.hud.od .face { background: conic-gradient(#f58a2e calc(var(--od, 1) * 360deg), rgba(20, 11, 9, 0.65) 0); }
 .face-in { width: 3.2rem; height: 3.2rem; overflow: hidden; background: #17666a; border: 3px solid var(--ink); box-shadow: 2px 2px 0 var(--ink); }
 .face-in img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: 50% 18%; }
 .hud-main { flex: 1 1 auto; min-width: 0; max-width: 26rem; }
@@ -292,7 +314,13 @@ body[data-state='over'] .hud .pause { visibility: hidden; width: 6.5rem; }
 .pause i { width: 16px; height: 18px; box-sizing: border-box; border-left: 6px solid #fff; border-right: 6px solid #fff; }
 .hud.od .pct { color: #ffc06a; }
 
-/* Indicator icons: CSS shapes until the props lane's item art exists (swap to background-image). */
+/* Item icons: --spr-* (props atlas crops, set in screens.ts init); the CSS shapes are the fallback. */
+.ico-gelol, .ico-pre, .ico-whey { image-rendering: pixelated; }
+.ico-gelol {
+  width: var(--spr-gelol-w, 1.8rem);
+  height: var(--spr-gelol-h, 1rem);
+  background: var(--spr-gelol, linear-gradient(90deg, #b4b3bd 0 18%, #f58a2e 18% 82%, #f9f8f8 82%));
+}
 .ico { display: inline-block; flex: none; vertical-align: middle; }
 .ico-coin {
   width: 1.3rem;
@@ -304,19 +332,14 @@ body[data-state='over'] .hud .pause { visibility: hidden; width: 6.5rem; }
   filter: drop-shadow(1px 0 0 var(--ink)) drop-shadow(-1px 0 0 var(--ink)) drop-shadow(0 1px 0 var(--ink)) drop-shadow(0 -1px 0 var(--ink)) drop-shadow(2px 2px 0 var(--ink));
 }
 .ico-whey {
-  width: 1.15rem;
-  height: 1.35rem;
-  background: linear-gradient(#b4b3bd 0 20%, var(--ink) 20% 28%, #f9f8f8 28% 42%, var(--teal) 42% 78%, #f9f8f8 78%);
-  border: 2px solid var(--ink);
-  border-radius: 3px;
-  box-shadow: 2px 2px 0 var(--ink);
+  width: var(--spr-whey-w, 1.15rem);
+  height: var(--spr-whey-h, 1.35rem);
+  background: var(--spr-whey, linear-gradient(#b4b3bd 0 20%, var(--ink) 20% 28%, #f9f8f8 28% 42%, var(--teal) 42% 78%, #f9f8f8 78%));
 }
 .ico-pre {
-  width: 0.95rem;
-  height: 1.4rem;
-  background: linear-gradient(#b4b3bd 0 12%, #e040c0 12% 88%, #b4b3bd 88%);
-  border: 2px solid var(--ink);
-  box-shadow: inset 0 calc((1 - var(--pre, 1)) * 1.4rem) 0 rgba(20, 11, 9, 0.7), 2px 2px 0 var(--ink); /* drains from the top */
+  width: var(--spr-pre-w, 0.95rem);
+  height: var(--spr-pre-h, 1.4rem);
+  background: var(--spr-pre, linear-gradient(#b4b3bd 0 12%, #e040c0 12% 88%, #b4b3bd 88%));
 }
 
 /* ---------- rotate prompt: portrait touch devices only, above everything ---------- */

@@ -9,7 +9,7 @@ const AT = [8, 22, 32, 41, 52, 62, 72, 82, 89, 96]; // % of the level (boss star
 
 fs.rmSync(OUT, { recursive: true, force: true });
 fs.mkdirSync(OUT, { recursive: true });
-const server = await createServer({ server: { port: 5199, strictPort: false }, logLevel: 'warn' });
+const server = await createServer({ server: { port: 5199, strictPort: false, hmr: false, watch: null }, logLevel: 'warn' }); // no reloads mid-run when other files change
 await server.listen();
 const base = server.resolvedUrls.local[0];
 const browser = await chromium.launch();
@@ -38,7 +38,7 @@ try {
   for (;;) {
     const s = await state(page);
     if (s === 'won' || s === 'over') break;
-    if (Date.now() - t0 > 150000) throw new Error('bot run timed out');
+    if (Date.now() - t0 > 360000) throw new Error('bot run timed out'); // headless software WebGL renders overdrive slowly
     const p = await pct(page);
     if (next < AT.length && p >= AT[next]) await shot(page, `${String(++next).padStart(2, '0')}-${p}pct`);
     await page.waitForTimeout(50);
@@ -55,7 +55,7 @@ try {
   await shot(dead, 'death');
 
   // 3. Hitbox overlay around the first big jumps.
-  const dbg = await open('?bot=1&debug=1&t=30', 'run');
+  const dbg = await open('?bot=1&debug=1&t=28', 'run');
   await dbg.waitForTimeout(1100);
   await shot(dbg, 'debug');
 

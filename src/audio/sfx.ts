@@ -40,6 +40,28 @@ export function ignite(o: Out, t: number) {
   sweep(o, t, 0.4, 'sawtooth', 90, 360, 0.15, filter(o, 'lowpass', 1800, 1, o.dest));
 }
 
+/** Gelol ending countdown, `n` = beats left (3, 2, 1): a bright pulse bip stepping up and getting louder. */
+export function countdown(o: Out, t: number, n: number) {
+  const m = n === 3 ? 88 : n === 2 ? 91 : 96, v = n === 1 ? 0.2 : n === 2 ? 0.16 : 0.13;
+  sweep(o, t, 0.09, 'pulse', mtof(m + 0.5), mtof(m), v);
+  osc(o, 'sine', mtof(m + 12), t, t + 0.05, hit(o, t, v * 0.5, 0.05, o.dest));
+}
+
+/** Pré-treino running out: a soft bubble tick (its last two beats) … */
+export const preTick = (o: Out, t: number) => sweep(o, t, 0.06, 'triangle', 650, 1000, 0.18);
+
+/** … and the fizzle when it ends: soda hiss falling away. */
+export function fizzle(o: Out, t: number) {
+  const g = o.ctx.createGain();
+  g.gain.setValueAtTime(0.25, t);
+  g.gain.exponentialRampToValueAtTime(1e-4, t + 0.35);
+  g.connect(o.dest);
+  const bp = filter(o, 'bandpass', 4500, 1.5, g);
+  bp.frequency.exponentialRampToValueAtTime(700, t + 0.3);
+  noise(o, t, t + 0.35, bp);
+  sweep(o, t, 0.2, 'triangle', 900, 260, 0.1);
+}
+
 export function powerDown(o: Out, t: number) {
   sweep(o, t, 0.5, 'sawtooth', 520, 70, 0.22, filter(o, 'lowpass', 1600, 2, o.dest));
 }

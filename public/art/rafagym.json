@@ -794,7 +794,7 @@
   },
   "pushup_1": {
    "frame": {
-    "x": 1513,
+    "x": 1623,
     "y": 470,
     "w": 162,
     "h": 98
@@ -1055,13 +1055,201 @@
     "x": 0.45,
     "y": 0.9866666666666667
    }
+  },
+  "run_upper": {
+   "frame": {
+    "x": 1513,
+    "y": 470,
+    "w": 108,
+    "h": 108
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 108,
+    "h": 108
+   },
+   "sourceSize": {
+    "w": 108,
+    "h": 108
+   },
+   "anchor": {
+    "x": 0.35185185185185186,
+    "y": 1.037037037037037
+   },
+   "rig": {
+    "hipDx": -13,
+    "hipUp": -77
+   }
+  },
+  "pelvis": {
+   "frame": {
+    "x": 2,
+    "y": 649,
+    "w": 48,
+    "h": 26
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 48,
+    "h": 26
+   },
+   "sourceSize": {
+    "w": 48,
+    "h": 26
+   },
+   "anchor": {
+    "x": 0.375,
+    "y": 0.5
+   }
+  },
+  "thigh": {
+   "frame": {
+    "x": 1787,
+    "y": 470,
+    "w": 40,
+    "h": 47
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 40,
+    "h": 47
+   },
+   "sourceSize": {
+    "w": 40,
+    "h": 47
+   },
+   "anchor": {
+    "x": 0.7,
+    "y": 0.2553191489361702
+   },
+   "bone": {
+    "len": 28.429737951658996,
+    "angle": -0.5977583915930821
+   }
+  },
+  "shin": {
+   "frame": {
+    "x": 1871,
+    "y": 470,
+    "w": 38,
+    "h": 45
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 38,
+    "h": 45
+   },
+   "sourceSize": {
+    "w": 38,
+    "h": 45
+   },
+   "anchor": {
+    "x": 0.7105263157894737,
+    "y": 0.23333333333333334
+   },
+   "bone": {
+    "len": 28.429737951658996,
+    "angle": -0.5977583915930821
+   }
+  },
+  "thigh_far": {
+   "frame": {
+    "x": 1829,
+    "y": 470,
+    "w": 40,
+    "h": 47
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 40,
+    "h": 47
+   },
+   "sourceSize": {
+    "w": 40,
+    "h": 47
+   },
+   "anchor": {
+    "x": 0.7,
+    "y": 0.2553191489361702
+   },
+   "bone": {
+    "len": 28.429737951658996,
+    "angle": -0.5977583915930821
+   }
+  },
+  "shin_far": {
+   "frame": {
+    "x": 1911,
+    "y": 470,
+    "w": 38,
+    "h": 45
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 38,
+    "h": 45
+   },
+   "sourceSize": {
+    "w": 38,
+    "h": 45
+   },
+   "anchor": {
+    "x": 0.7105263157894737,
+    "y": 0.23333333333333334
+   },
+   "bone": {
+    "len": 28.429737951658996,
+    "angle": -0.5977583915930821
+   }
+  },
+  "shoe": {
+   "frame": {
+    "x": 1951,
+    "y": 470,
+    "w": 48,
+    "h": 31
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 48,
+    "h": 31
+   },
+   "sourceSize": {
+    "w": 48,
+    "h": 31
+   },
+   "anchor": {
+    "x": 0.22916666666666666,
+    "y": 0.03225806451612903
+   }
   }
  },
  "meta": {
   "image": "rafagym.png",
   "size": {
    "w": 2048,
-   "h": 649
+   "h": 677
   },
   "scale": "1",
   "source": "art-src/characters/rafa-sheet-gym.PNG"

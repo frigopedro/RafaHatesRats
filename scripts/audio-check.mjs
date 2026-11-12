@@ -66,6 +66,20 @@ try {
       }
     }
   }
+  // Gelol ending: overdrive until beat 8 of a 4-bar render; the countdown alone must hit beats 5, 6, 7 (3, 2, 1).
+  for (const id of Object.keys(songs)) {
+    const name = `${id}-gelol-od-end`;
+    const opts = { bars: 4, od: true, odUntil: 8 };
+    save(name, await page.evaluate(([s, o]) => window.audioDev.renderPart(s, 'gelol', o), [id, opts]));
+    const r = await page.evaluate(([s, o]) => window.audioDev.renderPart(s, 'gelol', { ...o, only: 'countdown' }), [id, opts]);
+    const on = onsets(decode(r.wav), [5, 6, 7].map((b) => r.leadIn + b * r.spb));
+    const why = [];
+    if (r.peak >= 1 || r.nan) why.push('clips/NaN');
+    if (on.missing || on.extra) why.push(`ticks: ${on.missing} missing, ${on.extra} extra`);
+    if (on.max > MAX_ONSET_MS) why.push(`tick off by ${on.max.toFixed(2)} ms`);
+    if (why.length) fails.push(`${name}: ${why.join(', ')}`);
+    console.log(`${name.padEnd(26)} countdown ticks ${on.n - on.missing}/3, extra ${on.extra}, err ${on.mean.toFixed(2)}/${on.max.toFixed(2)} ms${why.length ? '  ✗ ' + why.join(', ') : ''}`);
+  }
   for (const name of sfx) {
     const r = await page.evaluate((n) => window.audioDev.renderSfx(n), name);
     const x = save(`sfx-${name}`, r);
@@ -77,6 +91,7 @@ try {
     if (why.length) fails.push(`sfx ${name}: ${why.join(', ')}`);
     console.log(`sfx-${name.padEnd(22)} ${db(r.peak).padStart(6)} ${db(level).padStart(7)}${why.length ? '  ✗ ' + why.join(', ') : ''}`);
   }
+  await realGame();
 } finally {
   await browser.close();
   await server.close();
@@ -86,6 +101,64 @@ if (fails.length) {
   console.error(`\n${fails.length} problem(s):\n  ${fails.join('\n  ')}`);
   process.exitCode = 1;
 } else console.log('audio check OK');
+
+/** The real game: click JOGAR (a real click, like the first tap on a phone) and watch what WebAudio is asked to do
+ *  for 2.5 s. No audio console errors; within 1.5 s the level-1 downbeat kick (180 Hz sine), the count-in blips on
+ *  beats 0, 1, 2 (E5 squares half a second apart) and the pad chord must have been started. */
+async function realGame() {
+  const page = await browser.newPage({ viewport: { width: 844, height: 390 } });
+  const errs = [];
+  page.on('console', (m) => m.type() === 'error' && /audio|RangeError|AudioParam|AudioContext/i.test(m.text()) && errs.push(m.text()));
+  page.on('pageerror', (e) => /audio|RangeError|AudioParam/i.test(String(e)) && errs.push(String(e)));
+  await page.addInitScript(() => {
+    const log = (window.__alog = []);
+    for (const C of [OscillatorNode, AudioBufferSourceNode]) {
+      const start = C.prototype.start;
+      C.prototype.start = function (when = 0, ...r) {
+        log.push({ osc: C === OscillatorNode, type: this.type, f: this.__f, when, ms: performance.now() - (window.__click ?? 0) });
+        return start.call(this, when, ...r);
+      };
+    }
+    const get = Object.getOwnPropertyDescriptor(OscillatorNode.prototype, 'frequency').get;
+    Object.defineProperty(OscillatorNode.prototype, 'frequency', {
+      get() {
+        const p = get.call(this), o = this;
+        if (!p.__w) {
+          const set = p.setValueAtTime.bind(p);
+          p.__w = true;
+          p.setValueAtTime = (v, t) => ((o.__f ??= v), set(v, t));
+        }
+        return p;
+      },
+    });
+  });
+  await page.goto('http://localhost:5184/');
+  await page.waitForSelector('[data-act="jogar"]', { timeout: 30000 });
+  await page.evaluate(() => addEventListener('click', () => (window.__click ??= performance.now()), { capture: true }));
+  await page.click('[data-act="jogar"]');
+  await page.waitForTimeout(2500);
+  const log = (await page.evaluate(() => window.__alog)).filter((l) => l.ms >= 0 && l.ms < 1500);
+  const kick = log.find((l) => l.osc && l.type === 'sine' && Math.round(l.f) === 180);
+  // beat 0 starts with the kick (a little late: nothing reaches the speaker before the output latency, so it plays at
+  // once); beats 1 and 2 are on the clock, half a second apart
+  const e5 = kick ? log.filter((l) => l.type === 'square' && Math.round(l.f) === 659) : [];
+  const later = e5.filter((l) => l.when > kick.when + 0.3);
+  const blips = [
+    ...e5.filter((l) => Math.abs(l.when - kick.when) < 0.005).slice(0, 1),
+    ...later.filter((l, i) => i < 2 && (i === 0 || Math.abs(l.when - later[0].when - 0.5) < 0.005)),
+  ];
+  const pad = kick ? log.filter((l) => l.type === 'sawtooth' && Math.abs(l.when - kick.when) < 0.005) : [];
+  const why = [];
+  if (errs.length) why.push(`${errs.length} audio console error(s): ${errs[0]}`);
+  if (!kick) why.push('no downbeat kick within 1.5 s');
+  if (blips.length < 3) why.push(`${blips.length}/3 count-in blips`);
+  if (pad.length < 2) why.push('no pad chord on the downbeat');
+  if (why.length) fails.push(`real game: ${why.join(', ')}`);
+  const late = kick && later.length ? (later[0].when - 0.5 - kick.when) * -1000 : NaN;
+  console.log(`real game (JOGAR)          ${log.length} sources started in 1.5 s; downbeat kick ${kick ? `sent +${kick.ms.toFixed(0)} ms after the click, ${late.toFixed(0)} ms behind the grid` : 'MISSING'}, ` +
+    `count-in ${blips.length}/3, pad ${pad.length} oscillators, audio errors ${errs.length}${why.length ? '  ✗ ' + why.join(', ') : ''}`);
+  await page.close();
+}
 
 function decode(b64) {
   const bytes = Buffer.from(b64, 'base64');

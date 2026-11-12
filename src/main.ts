@@ -1,20 +1,22 @@
 import '@fontsource/jersey-15/latin-400.css';
 import './ui/ui.css';
 import type Phaser from 'phaser';
-import { TICKS_PER_BEAT as TPB } from './config';
+import { createAudio } from './audio';
+import { OVERDRIVE, TICKS_PER_BEAT as TPB } from './config';
 import { BeatClock } from './game/clock';
 import { createGame } from './game/createGame';
 import { GameScene } from './game/GameScene';
 import { createInput } from './game/input';
 import { LEVELS } from './levels';
-import { levelSave, persist } from './save';
+import { getSettings, levelSave, onSettings, persist, type Settings } from './save';
 import { solve, type TraceInput } from './sim/solver';
 import type { GameControl, LevelDef, SimEvent } from './types';
 import * as ui from './ui/screens';
 import { harden } from './ui/shell';
 
 // Dev flags: ?level=<id or 1-based index> ?t=<start beat> ?bot=1 (autoplay the solver trace) ?debug=1 (hitboxes). With ?bot or ?level
-// the menu is skipped. Dev server only: ?screen=menu|fases|ajustes|pause|over|victory (&cause=<hazard> &as=<level id>), ?notch=1.
+// the menu is skipped. Dev server only: ?screen=menu|fases|ajustes|pause|hud|over|victory (&cause=<hazard> &as=<level id>
+// &delay=1 &od=<beats> &pre=<beats>), ?notch=1.
 const q = new URLSearchParams(location.search);
 const qBeat = Number(q.get('t') ?? 0);
 
@@ -23,8 +25,20 @@ let state: State = 'loading';
 const setState = (s: State) => (document.body.dataset.state = state = s); // CSS and scripts/shots*.mjs read it
 
 harden();
+const audio = createAudio(); // the AudioContext itself is made on the first real gesture
+// An audio bug must never stop the game: log it (the shot scripts fail on console errors) and play on.
+const safe = (f: () => void) => {
+  try {
+    f();
+  } catch (e) {
+    console.error('audio:', e);
+  }
+};
+const volumes = (s: Settings) => (audio.setMusicVolume(s.music / 100), audio.setSfxVolume(s.sfx / 100));
+volumes(getSettings());
+onSettings(volumes);
 const gameEl = document.getElementById('game')!;
-ui.init(document.getElementById('ui')!, () => pause(true));
+ui.init(document.getElementById('ui')!, () => pause(true), audio.ui);
 const portrait = matchMedia('(orientation: portrait) and (pointer: coarse)');
 
 let def: LevelDef | null = null;
@@ -33,8 +47,10 @@ let game: Phaser.Game | null = null;
 let host: HTMLElement | null = null;
 let gen = 0; // hooks from a game being torn down are ignored
 let whenReady: (() => void) | null = null;
+let clock: BeatClock | null = null;
+let startBeat = 0;
 let attempt = 0; // this session, this level
-let run = { coins: 0, smashed: 0 };
+let winTimer = 0; // the victory card waits a moment so the finish is seen in the game
 
 // One input for every game: its listeners live on #game and window for the page's lifetime.
 const input = createInput(gameEl, {
@@ -43,20 +59,23 @@ const input = createInput(gameEl, {
 });
 
 /** Makes `d` the loaded level, then calls `then`. GameScene takes its level in the constructor, so switching levels
- *  means a new Phaser game (see report: a GameControl.load(level) would avoid this). */
+ *  means a new Phaser game; createGame's destroy() also frees its observer and WebGL context. */
 function load(d: LevelDef, then: () => void) {
   if (d === def) {
     if (control) then();
     else whenReady = then;
     return;
   }
-  if (game) retire(game, host!);
+  safe(() => audio.stop());
+  game?.destroy(true);
+  host?.remove();
   def = d;
   control = null;
   whenReady = then;
   attempt = 0;
   const g = ++gen;
-  const startBeat = qBeat > 0 && qBeat < d.lengthBeats ? qBeat : 0;
+  startBeat = qBeat > 0 && qBeat < d.lengthBeats ? qBeat : 0;
+  clock = new BeatClock(d.bpm);
   let bot: TraceInput[] | null = null;
   if (q.get('bot') === '1') {
     const r = solve(d, { marginMs: d.marginMs, startBeat });
@@ -66,10 +85,14 @@ function load(d: LevelDef, then: () => void) {
   host = gameEl.appendChild(document.createElement('div'));
   host.className = 'game-host';
   const scene = new GameScene({
-    level: d, clock: new BeatClock(d.bpm), input, startBeat, bot, debug: q.get('debug') === '1',
+    level: d, clock, input, startBeat, bot, debug: q.get('debug') === '1',
     hooks: {
       onSimEvent: (e) => g === gen && simEvent(e),
-      onFrame: (beat, p) => g === gen && ui.hud.frame(beat, p),
+      onFrame(beat, p) {
+        if (g !== gen) return;
+        safe(() => audio.pump()); // every frame, paused or not: that is how the audio module hears a pause
+        ui.hud.frame(beat, p);
+      },
       onGameOver: (death, p) => g === gen && gameOver(death, p),
     },
     onReady(c) {
@@ -81,15 +104,6 @@ function load(d: LevelDef, then: () => void) {
     },
   });
   game = createGame(host, scene);
-}
-
-// createGame's ResizeObserver can't be disconnected: detach the host first so its last callback (0×0) lands while the
-// game is still alive, destroy two frames later, then free the WebGL context (Phaser doesn't; iOS caps contexts).
-function retire(g: Phaser.Game, el: HTMLElement) {
-  el.remove();
-  const gl = (g.renderer as { gl?: WebGLRenderingContext } | null)?.gl;
-  g.events.once('destroy', () => setTimeout(() => gl?.getExtension('WEBGL_lose_context')?.loseContext()));
-  requestAnimationFrame(() => requestAnimationFrame(() => g.destroy(true)));
 }
 
 function startLevel(d: LevelDef) {
@@ -104,12 +118,14 @@ function startLevel(d: LevelDef) {
 function play() {
   if (!control || !def) return;
   attempt++;
-  levelSave(ui.levelKey(def)).attempts++;
+  levelSave(def.id).attempts++;
   persist();
-  run = { coins: 0, smashed: 0 };
+  clearTimeout(winTimer);
   ui.hide();
   ui.hud.reset(def, attempt);
   control.start();
+  void audio.unlock(); // no-op unless this run was started by a real gesture; the module also self-unlocks
+  safe(() => audio.startLevel(def!, clock!, startBeat));
   setState('run');
   if (portrait.matches) pause(true); // loaded while the phone was upright
 }
@@ -118,7 +134,7 @@ function pause(on: boolean) {
   if (on && state === 'run' && control?.running) {
     control.setPaused(true);
     setState('paused');
-    ui.pause({ continuar: () => pause(false), reiniciar: play, menu });
+    ui.pause(def!, { continuar: () => pause(false), reiniciar: play, menu });
   } else if (!on && state === 'paused') {
     ui.hide();
     control!.setPaused(false);
@@ -127,11 +143,13 @@ function pause(on: boolean) {
 }
 
 function menu() {
+  safe(() => audio.stop());
+  clearTimeout(winTimer);
   setState('menu'); // a paused run is simply abandoned; JOGAR restarts
   ui.hud.show(false);
   ui.menu({
     jogar() {
-      // AUDIO HOOK (unlock): audio.unlock() — must stay inside this click handler for iOS.
+      void audio.unlock(); // iOS: must happen inside this click handler
       startLevel(nextLevel());
     },
     fases() {
@@ -147,18 +165,18 @@ function menu() {
 
 /** JOGAR: the first unfinished level in LEVELS order, else the first. */
 function nextLevel(): LevelDef {
-  return LEVELS.find((d) => !levelSave(ui.levelKey(d)).done) ?? LEVELS[0];
+  return LEVELS.find((d) => !levelSave(d.id).done) ?? LEVELS[0];
 }
 
 function simEvent(e: SimEvent) {
-  if (e.type === 'pickup' && e.kind === 'coin') run.coins++;
-  else if (e.type === 'smash') run.smashed++;
+  safe(() => audio.onSimEvent(e));
+  if (import.meta.env.DEV) (window as { __simProbe?: (e: SimEvent) => void }).__simProbe?.(e); // audio wiring check
   ui.hud.event(e);
-  if (e.type === 'win') win();
+  if (e.type === 'win') win(control!);
 }
 
 function gameOver(death: Extract<SimEvent, { type: 'death' }>, progress: number) {
-  const s = levelSave(ui.levelKey(def!));
+  const s = levelSave(def!.id);
   const pct = Math.floor(progress * 100), prev = s.best;
   if (pct > prev) {
     s.best = pct;
@@ -166,28 +184,38 @@ function gameOver(death: Extract<SimEvent, { type: 'death' }>, progress: number)
   }
   console.info(`death at beat ${(death.tick / TPB).toFixed(2)}: ${death.cause}`);
   setState('over');
-  ui.gameOver({ cause: death.cause, pct, best: s.best, record: pct > prev && prev > 0 }, { retry: play, menu });
+  ui.gameOver({ def: def!, cause: death.cause, pct, best: s.best, record: pct > prev && prev > 0 }, { retry: play, menu });
 }
 
-function win() {
-  const d = def!, s = levelSave(ui.levelKey(d)), card = ui.cardOf(d);
+/** Saves the win now; the card follows `delayMs` later, or at once on a tap or key. */
+function win(run: { coins: number; smashed: number }, delayMs = 1200) {
+  const d = def!, s = levelSave(d.id), card = ui.cardOf(d);
   const firstClear = !s.done, coinRecord = s.done && run.coins > s.coins;
+  const info = { def: d, card, coins: run.coins, total: ui.coinTotal(d), smashed: run.smashed, attempts: attempt, firstClear, coinRecord,
+    next: LEVELS[LEVELS.indexOf(d) + 1] ?? null, last: card === ui.CARDS[ui.CARDS.length - 1] }; // last = the story's end
   Object.assign(s, { best: 100, done: true, coins: Math.max(s.coins, run.coins) });
   persist();
-  const next = LEVELS[LEVELS.indexOf(d) + 1] ?? null;
-  const last = card === ui.CARDS[ui.CARDS.length - 1]; // the story's last level, wherever it sits in LEVELS
   setState('won');
-  ui.hud.show(false);
-  ui.victory(
-    { def: d, card, coins: run.coins, total: ui.coinTotal(d), smashed: run.smashed, attempts: attempt, firstClear, coinRecord, next, last },
-    { next: () => next && startLevel(next), repetir: play, menu },
-  );
+  const show = (e?: Event) => {
+    removeEventListener('pointerdown', show, true);
+    removeEventListener('keydown', show, true);
+    clearTimeout(winTimer);
+    if (state !== 'won') return;
+    e?.preventDefault(); // this tap/key only reveals the card; it must not also press a button on it
+    e?.stopPropagation();
+    ui.hud.show(false);
+    ui.victory(info, { next: () => info.next && startLevel(info.next), repetir: play, menu });
+  };
+  if (!delayMs) return show();
+  winTimer = window.setTimeout(show, delayMs);
+  addEventListener('pointerdown', show, true);
+  addEventListener('keydown', show, true);
 }
 
 portrait.addEventListener('change', () => portrait.matches && pause(true));
 document.addEventListener('visibilitychange', () => document.hidden && pause(true));
 
-const qLevel = ui.levelById(q.get('level') ?? '') ?? LEVELS[Number(q.get('level')) - 1];
+const qLevel = LEVELS.find((l) => l.id === q.get('level')) ?? LEVELS[Number(q.get('level')) - 1];
 if (import.meta.env.DEV && q.get('notch') === '1') document.body.classList.add('fake-notch');
 if (import.meta.env.DEV && q.has('screen')) devScreen(q.get('screen')!);
 else if (q.get('bot') === '1' || q.has('level')) startLevel(qLevel ?? LEVELS[0]);
@@ -205,15 +233,19 @@ function devScreen(screen: string) {
   }
   // &as=church|party dresses level 1 up as a level that isn't in LEVELS yet (name, card, victory text).
   const as = ui.CARDS.find((c) => c.id === q.get('as'));
-  load(as ? Object.assign({ ...LEVELS[0], songId: as.id, name: as.name }, { id: as.id }) : qLevel ?? LEVELS[0], () => { // id set either way: LevelDef.id is moving from number to string
+  load(as ? { ...LEVELS[0], id: as.id, songId: as.id, name: as.name } : qLevel ?? LEVELS[0], () => {
     play();
     if (screen === 'pause') return setTimeout(() => pause(true), 600);
+    if (screen === 'hud') // frozen run with power-up timers at &od= / &pre= beats left
+      return setTimeout(() => {
+        control!.setPaused(true);
+        const b = ui.hud.beat, od = Number(q.get('od') ?? 0), pre = Number(q.get('pre') ?? 0);
+        if (od) Object.assign(ui.hud, { odFrom: b + od - OVERDRIVE.beats, odUntil: b + od });
+        if (pre) ui.hud.preUntil = b + pre;
+      }, 600);
     control!.setPaused(true);
     const cause = (q.get('cause') ?? 'rat') as Extract<SimEvent, { type: 'death' }>['cause'];
     if (screen === 'over') gameOver({ type: 'death', tick: 900, cause, hazard: 0 }, 0.41);
-    if (screen === 'victory') {
-      run = { coins: 23, smashed: 6 };
-      win();
-    }
+    if (screen === 'victory') win({ coins: 23, smashed: 6 }, q.get('delay') ? 1200 : 0);
   });
 }

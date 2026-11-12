@@ -128,7 +128,7 @@ describe('collisions and items', () => {
     expect(run(level([dumbbell]), [Math.round(3.65 * TPB)], 6).s.dead).toBe(false);
   });
   it('a big hazard needs the big jump: a hop has no ±60 ms window over it, a big jump does', () => {
-    const rack: ChartEvent = { t: 'hazard', beat: 4, kind: 'plateRack', b: 'static' };
+    const rack: ChartEvent = { t: 'hazard', beat: 4, kind: 'pewEnd', b: 'static' }; // 1.0 × 1.2, like a full-size rack
     const slack = Math.round(0.12 * TPB); // 60 ms at 120 BPM
     const survives = (hold: number) => {
       const ok = new Set<number>();

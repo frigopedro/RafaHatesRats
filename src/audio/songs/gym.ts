@@ -17,7 +17,7 @@ const CHASE_A = 'c#5:1 b4:1 c#5:2 e5:1 d5:1 e5:2 g5:2 f#5:1 g5:1 c#6:4';
 const CHASES = [CHASE, CHASE, CHASE_A, CHASE].join(' | ');
 const TAUNT = '.:8 c6:2 a5:2 d6:1 c6:1 a5:2';
 const POLKA = oct(each('d2 d2 a1 d2', (r) => (r === 'a1' ? 'a1:4 e2:4 a1:4 e2:4' : `${r}:4 a1:4 ${r}:4 a1:4`)));
-const OOMPAH = { chords: 'Dm Dm A7 Dm', key: FAB, kick: FOUR, snare: '..x...x...x...x.', bass: POLKA };
+const OOMPAH = { chords: 'Dm Dm A7 Dm', key: FAB, kick: FOUR, snare: '..x...x...x...x.', hat: 'x.x.x.x.x.x.x.x.', open: '..x.......x.....', bass: POLKA };
 const ROLL = 'o.o.o.o.x.x.xxXX';
 
 const HOOK_A = 'e5:2 e5:1 .:1 c5:2 e5:2 a5:3 g5:3 e5:2 | f5:3 e5:3 c5:2 a4:4 .:2 c5:2';
@@ -42,15 +42,15 @@ export const gym: SongDef = {
     // Count-in: a coach's "1, 2, 3, 4" over a lone downbeat, then four-on-the-floor and a roll into the warm-up.
     intro: {
       chords: 'Am', pad: 0.25,
-      kick: 'X...............', count: 'e5:4 e5:4 e5:4 a5:4', riser: 4,
-      end: { kick: FOUR, snare: '........o.o.oxxX', hat: 'o.x.o.x.o.x.o.x.' },
+      kick: 'X...............', hat: '........x.x.x.x.', count: 'e5:4 e5:4 e5:4 a5:4', riser: 4,
+      end: { kick: FOUR, snare: '........o.o.oxxX', hat: 'x.xox.xox.xox.xo', open: '..x...x...x...x.' },
     },
     // Drums, octave-bounce bass and a plucked arp; a light lead only in the second half.
     warmup: {
       chords: 'Am Am F G',
-      kick: FOUR, clap: BACK, hat: 'o.x.o.x.o.x.o.x.',
+      kick: FOUR, clap: BACK, hat: 'x.xox.xox.xox.xo', open: '......x.......x.',
       bass: each('a2 a2 f2 g2', bounce),
-      arp: oct('a4 c5 e5 c5 a4 c5 e5 c5 | a4 c5 e5 a5 g5 e5 c5 e5 | a4 c5 f5 c5 a4 c5 f5 a5 | g4 b4 d5 b4 g4 b4 d5 g5', -1),
+      arp: 'a4 c5 e5 c5 a4 c5 e5 c5 | a4 c5 e5 a5 g5 e5 c5 e5 | a4 c5 f5 c5 a4 c5 f5 a5 | g4 b4 d5 b4 g4 b4 d5 g5',
       lead: `${rep('.:16', 4)} | a4:3 c5:3 e5:2 d5:2 c5:2 a4:4 | .:2 e5:2 g5:3 e5:3 d5:2 c5:4 | c5:3 a4:3 c5:2 f5:4 e5:2 d5:2 | d5:3 b4:3 g4:2 d5:4 b4:2 .:2`,
       end: { snare: '............o.xX' },
     },

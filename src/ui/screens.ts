@@ -9,17 +9,54 @@ import { deathCard } from './jokes';
 type Acts = Record<string, () => void>;
 
 /** The three levels as the player sees them, in story order; a card lights up once its id is in LEVELS.
- *  `boss`: the bossEnter cue brings a boss (angry face); otherwise it is the church's dash to the altar. */
+ *  `boss`: the bossEnter cue brings a boss (angry face); otherwise it is the church's dash to the altar.
+ *  Each level has its own Rafa: `faces` (HUD, game over), `phone` (pause), `winImg` / `win2Img` (victory). */
 export const CARDS = [
-  { id: 'gym', name: 'Campeonato Gym Rats', kit: 'rafakit_standing.png', kitPx: true, sub: 'Chefe: Fabinho', side: 'fabinho_armscrossed.png', sidePx: false, boss: true, win: '1º LUGAR!', win2: '…e um LCA a menos.' },
-  { id: 'church', name: 'A Madrinha', kit: 'rafakit_crutches.png', kitPx: true, sub: 'Missão: chegar ao altar', side: 'giovanni.png', sidePx: false, boss: false, win: 'CHEGOU A TEMPO, MADRINHA!', win2: '' },
-  { id: 'party', name: 'A Festa', kit: 'rafa_turn_34.png', kitPx: false, sub: 'Chefe: O Aranha da Carreta', side: 'aranha_pose1.png', sidePx: true, boss: true, win: 'FIM! Rafa ainda odeia ratos.', win2: '' },
+  { id: 'gym', name: 'Campeonato Gym Rats', kit: 'rafagym_turn_34.png', kitPx: false, sub: 'Chefe: Fabinho', side: 'fabinhogym_turn_34.png', sideFb: 'fabinho_armscrossed.png', sidePx: false, boss: true,
+    faces: 'rafagym_face_', noSad: false, phone: 'rafagym_phone.png', win: '1º LUGAR!', winImg: 'rafagym_armsup.png', winPx: false, win2: '…e um LCA a menos.', win2Img: 'rafagym_knee.png' },
+  { id: 'church', name: 'A Madrinha', kit: 'rafamuleta_turn_34.png', kitPx: false, sub: 'Missão: chegar ao altar', side: 'giovanni.png', sideFb: undefined, sidePx: false, boss: false, flank: ['nathalia_turn_34.png', 'murilo_turn_34.png'],
+    faces: 'rafamuleta_face_', noSad: true, phone: 'rafamuleta_phone.png', win: 'CHEGOU A TEMPO, MADRINHA!', winImg: 'rafamuleta_dance.png', winPx: false, win2: '', win2Img: '' },
+  { id: 'party', name: 'A Festa', kit: 'rafa_turn_34.png', kitPx: false, sub: 'Chefe: O Aranha da Carreta', side: 'aranha_pose1.png', sideFb: undefined, sidePx: true, boss: true,
+    faces: 'rafa_face_', noSad: false, phone: 'rafa_pose_phone.png', win: 'FIM! Rafa ainda odeia ratos.', winImg: 'rafa_pose_armsup.png', winPx: false, win2: '', win2Img: '' },
 ];
 export type Card = (typeof CARDS)[number];
-// shortcut: falls back to songId ('gym') while LevelDef.id is still the old number; drop once types.ts has string ids.
-export const levelKey = (l: LevelDef): string => (typeof l.id === 'string' ? l.id : l.songId);
-export const levelById = (id: string) => LEVELS.find((l) => levelKey(l) === id);
-export const cardOf = (d: LevelDef) => CARDS.find((c) => c.id === levelKey(d));
+
+// Drawn heights relative to standing Rafa (sheets aren't drawn to a common scale); unlisted images (faces) = 1.
+const RATIO: Record<string, number> = {
+  'rafagym_turn_34.png': 1, 'rafamuleta_turn_34.png': 1, 'rafamuleta_dance.png': 1, 'rafa_turn_34.png': 0.84,
+  'fabinhogym_turn_34.png': 0.88, 'fabinho_armscrossed.png': 0.88, 'giovanni.png': 1.18, 'aranha_pose1.png': 0.7,
+  'aranha_pose2.png': 0.8, 'nathalia_turn_34.png': 0.95, 'murilo_turn_34.png': 1.06,
+};
+const ratioOf = (src: string) => RATIO[src.slice(src.lastIndexOf('/') + 1)] ?? 1;
+
+/** One reference height R for all the figures in `sel` boxes under `root` (each drawn at R × RATIO, feet on the box
+ *  bottom): the tallest fills its box height with a little headroom and the widest box's figures fit its width; `overlap` = the fraction of each partner's width that tucks behind
+ *  the figure before it (CSS .overlap). Sizes are CSS (.fig): this only hands over the numbers. */
+function fitFigures(root: HTMLElement, sel: string, overlap = 0): void {
+  const fit = () => {
+    let h = 0, w = 0;
+    for (const box of root.querySelectorAll(sel)) {
+      let bw = 0;
+      for (const i of box.querySelectorAll('img')) {
+        if (i.hidden || !i.naturalHeight) continue;
+        const ov = bw ? overlap : 0;
+        const f = (100 * ratioOf(i.src)) / i.naturalHeight; // the PNGs are cropped to their visible content
+        i.style.setProperty('--nh', String(i.naturalHeight));
+        i.style.setProperty('--f', String(f));
+        i.style.setProperty('--nw', String(i.naturalWidth));
+        h = Math.max(h, i.naturalHeight * f);
+        bw += i.naturalWidth * f * (1 - ov);
+      }
+      w = Math.max(w, bw);
+    }
+    if (h) root.style.setProperty('--kh', String(96 / h)), root.style.setProperty('--kw', String(94 / w));
+  };
+  fit();
+  for (const type of ['load', 'error']) root.addEventListener(type, fit, true); // art arrives (or falls back) later
+}
+export const levelById = (id: string) => LEVELS.find((l) => l.id === id);
+export const cardOf = (d: LevelDef) => CARDS.find((c) => c.id === d.id);
+const facesOf = (d: LevelDef | null) => (d && cardOf(d)?.faces) || 'rafa_face_';
 export const coinTotal = (d: LevelDef) => d.chart.filter((e) => e.t === 'item' && e.kind === 'coin').length;
 
 const FACES = ['smile', 'laugh', 'grin', 'shocked', 'sad', 'angry'] as const;
@@ -34,7 +71,7 @@ let acts: Acts = {};
 let tapAct: (() => void) | null = null; // game over: a tap anywhere / Space / Enter
 let tapArmedAt = 0;
 
-export function init(el: HTMLElement, onPause: () => void): void {
+export function init(el: HTMLElement, onPause: () => void, sound: (name: 'click' | 'back' | 'start') => void): void {
   root = el;
   root.innerHTML = `
     <div class="hud" hidden>
@@ -46,10 +83,13 @@ export function init(el: HTMLElement, onPause: () => void): void {
       <div class="hud-items">
         <span class="hud-coins" title="Halteres dourados"><i class="ico ico-coin"></i><b>0</b></span>
         <i class="ico ico-whey" title="Whey: escudo" hidden></i>
-        <i class="ico ico-pre" title="Pré-treino: pulo duplo" hidden></i>
       </div>
       <span class="att"></span>
       <button class="pause" type="button" aria-label="Pausar"><i></i></button>
+      <div class="timers">
+        <div class="timer t-gelol" title="Gelol" hidden><i class="ico ico-gelol"></i><div class="tbar"><i></i></div><b></b></div>
+        <div class="timer t-pre" title="Pré-treino" hidden><i class="ico ico-pre"></i><div class="tbar"><i></i></div><b></b></div>
+      </div>
     </div>
     <div class="layer" hidden></div>
     <p class="sr" aria-live="polite"></p>
@@ -61,13 +101,25 @@ export function init(el: HTMLElement, onPause: () => void): void {
   layer = root.querySelector('.layer')!;
   live = root.querySelector('.sr')!;
   hud.el = root.querySelector('.hud')!;
-  for (const f of FACES) new Image().src = `art/ui/rafa_face_${f}.png`; // HUD swaps must not flash
+  // Item icons are cropped from the props atlas (1 CSS px per art px, pixelated); CSS shapes stand in until it loads.
+  fetch('art/props.json').then((r) => r.json()).then((j) => {
+    const url = new URL(`art/${j.meta.image}`, document.baseURI).href, { w, h } = j.meta.size;
+    for (const k of ['gelol', 'pre', 'whey']) {
+      const f = j.frames[k]?.frame;
+      if (!f) continue;
+      root.style.setProperty(`--spr-${k}`, `url("${url}") -${f.x}px -${f.y}px / ${w}px ${h}px no-repeat`);
+      root.style.setProperty(`--spr-${k}-w`, `${f.w}px`);
+      root.style.setProperty(`--spr-${k}-h`, `${f.h}px`);
+    }
+  }).catch(() => {});
+  for (const c of CARDS) for (const f of FACES) if (!(c.noSad && f === 'sad')) new Image().src = `art/ui/${c.faces}${f}.png`; // HUD swaps must not flash
 
   layer.addEventListener('click', (e) => {
     const b = (e.target as Element).closest<HTMLButtonElement>('[data-act]');
     if (!b || b.disabled) return;
-    // AUDIO HOOK (UI click): sfx('click') — every menu button passes here, inside a real click handler.
-    acts[b.dataset.act!]?.();
+    const act = b.dataset.act!;
+    sound(/^(jogar|next|repetir|reiniciar|lv-)/.test(act) ? 'start' : /^(voltar|menu|nao)$/.test(act) ? 'back' : 'click'); // also unlocks audio
+    acts[act]?.();
   });
   layer.addEventListener('pointerdown', (e) => {
     if (!tapAct || (e.target as Element).closest('button')) return;
@@ -88,7 +140,7 @@ export function init(el: HTMLElement, onPause: () => void): void {
       else if (e.code === 'Space' || e.code === 'ArrowUp') t.blur(); // focused pause button mid-run: it's a jump
     }
   }, true);
-  hud.el.querySelector('.pause')!.addEventListener('click', onPause); // AUDIO HOOK (UI click) here too
+  hud.el.querySelector('.pause')!.addEventListener('click', () => (sound('click'), onPause()));
 
   const fx = (s: Settings) => document.body.classList.toggle('reduce-fx', s.reduceFx);
   fx(getSettings());
@@ -146,12 +198,13 @@ export function fases(a: { voltar(): void; play(d: LevelDef): void }): void {
       <button class="card" data-act="lv-${c.id}"${def ? '' : ' disabled'}>
         <span class="card-n">FASE ${i + 1}</span>
         <span class="card-title">${esc(def?.name ?? c.name)}</span>
-        <span class="card-art">${img(c.kit, `kit${c.kitPx ? ' px' : ''}`, '', c.kitPx ? 'rafa_turn_34.png' : undefined)}${img(c.side, `boss${c.sidePx ? ' px' : ''}`, '')}</span>
+        <span class="card-art fig overlap">${img(c.kit, `kit${c.kitPx ? ' px' : ''}`, '', c.kitPx ? 'rafa_turn_34.png' : undefined)}${img(c.side, `boss${c.sidePx ? ' px' : ''}`, '', c.sideFb)}</span>
         <span class="card-boss">${c.sub}</span>
         ${stats}${badge}
       </button>`;
   }).join('');
   show('bg fases', `${header('FASES')}<div class="cards">${cards}</div>`, cardActs, '.card:not([disabled])');
+  fitFigures(layer.querySelector('.cards')!, '.card-art', 0.15);
 }
 
 export function ajustes(a: { voltar(): void }): void {
@@ -193,16 +246,16 @@ export function ajustes(a: { voltar(): void }): void {
     const key = el.dataset.set as keyof Settings;
     if (key === 'reduceFx') setSettings({ reduceFx: el.checked });
     else {
-      setSettings({ [key]: Number(el.value) }); // AUDIO HOOK (volume): audio subscribes with onSettings() in src/save.ts
+      setSettings({ [key]: Number(el.value) }); // main.ts applies volumes to the audio through onSettings()
       el.nextElementSibling!.textContent = el.value;
     }
   });
 }
 
-export function pause(a: { continuar(): void; reiniciar(): void; menu(): void }): void {
+export function pause(d: LevelDef, a: { continuar(): void; reiniciar(): void; menu(): void }): void {
   show('dim center', `
     <div class="panel pausa">
-      ${img('rafa_pose_phone.png', 'hero small', 'Rafa no celular')}
+      ${img(cardOf(d)?.phone ?? 'rafa_pose_phone.png', 'hero small', 'Rafa no celular')}
       <div class="stack">
         <h2>PAUSA</h2>
         <button class="btn big" data-act="continuar">CONTINUAR</button>
@@ -212,20 +265,23 @@ export function pause(a: { continuar(): void; reiniciar(): void; menu(): void })
     </div>`, a);
 }
 
-export interface OverInfo { cause: string; pct: number; best: number; record: boolean }
+export interface OverInfo { def: LevelDef; cause: string; pct: number; best: number; record: boolean }
 
 export function gameOver(o: OverInfo, a: { retry(): void; menu(): void }): void {
   const c = deathCard(o.cause, HAZARDS[o.cause as HazardKind]?.size === 'big'); // kinds unknown to config are fine
+  // A partner face shares her head scale; a full-figure partner (Giovanni, the Aranha) stands at the figure height.
+  const faces = !!c.boss?.includes('_face_');
   show('dim center over', `
     <button class="btn small sage corner" data-act="menu">MENU</button>
     <div class="panel over-card" tabindex="-1">
-      <div class="over-art">${img(`rafa_face_${c.face}.png`, 'over-face', '')}${c.boss ? img(c.boss, `over-boss${c.px ? ' px' : ''}`, '') : ''}</div>
+      <div class="over-art${faces ? ' fig' : ''}">${img(`${facesOf(o.def)}${c.face === 'sad' && cardOf(o.def)?.noSad ? 'shocked' : c.face}.png`, 'over-face', '')}${c.boss ? img(c.boss, `over-boss${c.px ? ' px' : ''}${faces ? '' : ' figure'}`, '', c.fb) : ''}</div>
       <div class="over-text">
         <p class="joke">${c.line}</p>
         <p class="score"><b>${o.pct}%</b> ${o.record ? '<span class="rec">NOVO RECORDE!</span>' : `<span>Recorde ${o.best}%</span>`}</p>
         <p class="tap">TOQUE PARA TENTAR DE NOVO</p>
       </div>
     </div>`, { menu: a.menu }, '.over-card');
+  if (faces) fitFigures(layer.querySelector('.over-card')!, '.over-art');
   live.textContent = `${c.line} ${o.pct}%.`;
   tapAct = a.retry;
   tapArmedAt = performance.now() + 250; // the tap that killed her must not skip the card
@@ -238,11 +294,14 @@ export function victory(w: WinInfo, a: { next(): void; repetir(): void; menu(): 
     `<i style="--x:${Math.random() * 100}%;--dx:${(Math.random() - 0.5) * 30}vw;--r:${Math.random() * 900 - 450}deg;--d:${1.2 + Math.random()}s;--w:${Math.random() * 0.4}s;--c:${['#f5c23a', '#22a39a', '#e040c0', '#a8b6a3', '#3a6fd8', '#f26b55'][i % 6]}"></i>`).join('')}</div>`;
   const recs = [w.firstClear && 'PRIMEIRA VITÓRIA!', w.coinRecord && 'RECORDE DE HALTERES!'].filter(Boolean);
   const next = w.last ? '' : w.next ? '<button class="btn big" data-act="next">PRÓXIMA FASE</button>' : '<button class="btn" disabled>PRÓXIMA FASE · EM BREVE</button>';
-  // gym: a beat after "1º LUGAR!" the knee goes — second line and the shocked face appear on the beat (--beat).
+  // gym: a beat after "1º LUGAR!" the knee goes — the second line and the knee-hugging Rafa appear on the beat.
   const beat = `--beat:${Math.round(60000 / w.def.bpm)}ms`;
-  const art = w.card?.win2
-    ? `<div class="vit-art" style="${beat}">${img('rafa_pose_armsup.png', 'hero small then-hide', 'Rafa comemorando')}${img('rafa_face_shocked.png', 'then-show vit-shock', 'Rafa em choque')}</div>`
-    : img('rafa_pose_armsup.png', 'hero small', 'Rafa comemorando');
+  const c = w.card, win = img(c?.winImg ?? 'rafa_pose_armsup.png', `hero small${c?.winPx ? ' px' : ''}`, 'Rafa comemorando');
+  const art = c?.win2
+    ? `<div class="vit-art" style="${beat}">${win.replace('hero small', 'hero small then-hide')}${img(c.win2Img, 'hero small then-show', 'Rafa abraçando o joelho')}</div>`
+    : c?.flank // church: the couple beside her at the altar (each hides itself until its art exists)
+      ? `<div class="vit-trio fig">${img(c.flank[0], '', 'Nathalia')}${win.replace('hero small', 'mid')}${img(c.flank[1], '', 'Murilo')}</div>`
+      : win;
   show('dim center', `${confetti}
     <div class="panel vitoria">
       ${art}
@@ -259,15 +318,17 @@ export function victory(w: WinInfo, a: { next(): void; repetir(): void; menu(): 
         <div class="btns">${next}<button class="btn teal" data-act="repetir">REPETIR</button><button class="btn sage" data-act="menu">MENU</button></div>
       </div>
     </div>`, a);
+  if (c?.flank) fitFigures(layer.querySelector('.vitoria')!, '.vit-trio');
   live.textContent = `${w.card?.win ?? 'Fase concluída!'} ${w.card?.win2 ?? ''} ${w.coins} de ${w.total} halteres.`;
 }
 
 /** The HUD: written only when something it shows changes (onFrame runs every frame). */
 export const hud = {
   el: null as unknown as HTMLElement,
-  pct: -1, att: -1, face: '' as Face | '', od: false, pre: false, odP: '', preP: '',
+  pct: -1, att: -1, face: '' as Face | '', od: false,
+  tm: { gelol: { on: false, n: -1, p: '' }, pre: { on: false, n: -1, p: '' } },
   coins: 0, shield: false, boss: false, dead: false, laughUntil: 0, odFrom: 0, odUntil: 0, preUntil: 0,
-  bossFace: 'angry' as Face, shockUntil: 0, beatMs: 500,
+  bossFace: 'angry' as Face, shockUntil: 0, beatMs: 500, faces: 'rafa_face_', beat: 0,
 
   $<T extends HTMLElement>(sel: string): T {
     return this.el.querySelector(sel) as T;
@@ -280,12 +341,15 @@ export const hud = {
     // Church has no boss: its bossEnter is "the bride is coming" — a beat of shock, then a determined grin.
     this.bossFace = cardOf(def)?.boss === false ? 'grin' : 'angry';
     this.beatMs = 60000 / def.bpm;
+    this.faces = facesOf(def);
+    this.face = ''; // the face set may have changed: rewrite the image on the next frame
     this.$('.hud-name').textContent = def.name;
     this.$('.att').textContent = `Tentativa ${attempt}`;
     this.$('.hud-coins b').textContent = '0';
-    this.$('.ico-whey').hidden = this.$('.ico-pre').hidden = true;
+    this.$('.ico-whey').hidden = this.$('.t-gelol').hidden = this.$('.t-pre').hidden = true;
     this.el.classList.remove('od');
-    this.od = this.pre = false;
+    this.od = false;
+    this.tm = { gelol: { on: false, n: -1, p: '' }, pre: { on: false, n: -1, p: '' } };
     this.el.hidden = false;
   },
   event(e: SimEvent): void {
@@ -307,27 +371,35 @@ export const hud = {
       if (this.boss && this.bossFace === 'grin') this.shockUntil = performance.now() + this.beatMs;
     }
   },
+  /** A draining power-up timer with the beats left; red for the last `warn` beats, pulsing once per beat. */
+  timer(name: 'gelol' | 'pre', beat: number, from: number, until: number, total: number, warn: number): boolean {
+    const st = this.tm[name], el = this.$(`.t-${name}`);
+    const on = beat >= from && beat < until;
+    if (on !== st.on) el.hidden = !(st.on = on);
+    if (!on) return false;
+    const left = until - beat, n = Math.ceil(left), p = Math.min(1, left / total).toFixed(3); // an extension refills it
+    if (p !== st.p) el.style.setProperty('--p', (st.p = p));
+    if (n !== st.n) {
+      st.n = n;
+      el.querySelector('b')!.textContent = String(n);
+      el.classList.toggle('warn', n <= warn);
+      el.classList.toggle('odd', n % 2 === 1); // alternating animation names restart the pulse every beat
+    }
+    return true;
+  },
   frame(beat: number, progress: number): void {
+    this.beat = beat;
     const p = Math.floor(progress * 100);
     if (p !== this.pct) {
       this.pct = p;
       this.$('.bar > i').style.transform = `scaleX(${p / 100})`;
       this.$('.pct').textContent = `${p}%`;
     }
-    const od = beat >= this.odFrom && beat < this.odUntil;
+    const od = this.timer('gelol', beat, this.odFrom, this.odUntil, OVERDRIVE.beats, 3);
     if (od !== this.od) this.el.classList.toggle('od', (this.od = od));
-    if (od) {
-      const v = ((this.odUntil - beat) / (this.odUntil - this.odFrom)).toFixed(2);
-      if (v !== this.odP) this.el.style.setProperty('--od', (this.odP = v));
-    }
-    const pre = beat < this.preUntil;
-    if (pre !== this.pre) this.$('.ico-pre').hidden = !(this.pre = pre);
-    if (pre) {
-      const v = ((this.preUntil - beat) / (PRE_TICKS / TPB)).toFixed(2);
-      if (v !== this.preP) this.el.style.setProperty('--pre', (this.preP = v));
-    }
+    this.timer('pre', beat, this.preUntil - PRE_TICKS / TPB, this.preUntil, PRE_TICKS / TPB, 2);
     const now = performance.now();
     const face: Face = this.dead || now < this.shockUntil ? 'shocked' : now < this.laughUntil ? 'laugh' : od ? 'grin' : this.boss ? this.bossFace : 'smile';
-    if (face !== this.face) this.$<HTMLImageElement>('.face img').src = `art/ui/rafa_face_${(this.face = face)}.png`;
+    if (face !== this.face) this.$<HTMLImageElement>('.face img').src = `art/ui/${this.faces}${(this.face = face)}.png`;
   },
 };

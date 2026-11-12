@@ -11,6 +11,7 @@ interface Overlay { name: string; layer: string; at: [number, number][]; width: 
 interface Sprite extends Pic {
   name: string; pivot: { x: number; y: number }; blend?: string; beat?: string; frames?: string[];
   mount?: { layer: string; points: [number, number][] }; once?: boolean; // once: placed with its pivot on the ground at the level end
+  spots?: Record<string, { x: number; y: number }>; // once: feet positions (sprite px); spots.rafa lands on Rafa's final x
 }
 interface GroundOverlay extends Pic { name: string; beat?: string }
 interface ThemeDef {
@@ -168,8 +169,9 @@ export class Background {
   private sprite(sp: Sprite, wArt: number): void {
     const S = this.S;
     this.depth++;
-    if (sp.once) { // placed with its pivot on the ground at the level end
-      if (this.endX + sp.width * S > this.left && this.endX - sp.width * S < this.right) this.put(sp, this.endX, 0, 0);
+    if (sp.once) { // placed with its pivot on the ground at the level end, shifted so Rafa stops on her spot
+      const x = this.endX - (sp.spots?.rafa?.x ?? 0) * S;
+      if (x + sp.width * S > this.left && x - sp.width * S < this.right) this.put(sp, x, 0, 0);
       return;
     }
     const l = sp.mount && this.t.layers.find((q) => q.name === sp.mount!.layer);

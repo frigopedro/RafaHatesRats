@@ -173,7 +173,8 @@ export function clap(o: Out, t: number, v: number) {
 
 export function hat(o: Out, t: number, v: number, open = false) {
   const d = open ? 0.28 : 0.045;
-  noise(o, t, t + d, filter(o, 'highpass', 7000, 0.8, hit(o, t, v * (open ? 0.3 : 0.42), d, o.dest)));
+  // 5.5 kHz: low enough that phone speakers still reproduce most of it
+  noise(o, t, t + d, filter(o, 'highpass', 5500, 0.8, hit(o, t, v * (open ? 0.3 : 0.42), d, o.dest)));
 }
 
 /** Pitched drum: the tamborzão "tum" (also fills). */

@@ -57,3 +57,63 @@ export const RAFAGYM = {
   phone: { frames: ['phone_0', 'phone_1'], perBeat: 0.5, loop: true },
   asleep: { frames: ['asleep'], perBeat: 1, loop: false },
 } satisfies Record<string, SheetAnim>;
+
+/** Gym Fabinho (level-1 boss), v2 sheet (fabinho-v2-gym.PNG), drawn 1:1, standing ≈ 170 px. Same keys as FABINHO
+ *  (plus the taunt names below), so the boss view swaps atlas and table in one line. Origin x = his face, y = feet;
+ *  frames face right. `g_` frames are row-2 poses scaled to his in-game height. His run row is a genuine cycle (also
+ *  drawn by src/game/fabinhoGym.ts). This sheet has no push-ups, sit-ups or lying poses: the push-up/sit-up/squat
+ *  taunt keys point at taunts that exist; `defeated` is his idle pose baked turned 90° (lying on the floor);
+ *  `land` is his idle pose — squash it in the view. */
+export const FABINHOGYM_ATLAS = 'fabinhogym';
+const one = (frame: string): SheetAnim => ({ frames: [frame], perBeat: 1, loop: false });
+export const FABINHOGYM = {
+  run: { frames: ['run_0', 'run_1', 'run_2', 'run_3', 'run_4'], perBeat: 5, loop: true }, // one stride cycle per beat
+  walk: { frames: ['walk_0', 'walk_1', 'walk_2', 'walk_3'], perBeat: 4, loop: true },
+  leap: { frames: ['run_0', 'g_pose_armsup'], perBeat: 2, loop: false }, // push-off, then arms up from the apex
+  land: one('g_pose_idle'),
+  throw: { frames: ['g_pose_wave', 'g_pose_point'], perBeat: 2, loop: false }, // wind-up, release
+  taunt_pushup: one('g_pose_laugh'), // laughing, hands on hips
+  taunt_situp: one('g_pose_armscrossed'),
+  taunt_squat: one('g_pose_phone'),
+  taunt_laugh: one('g_pose_laugh'),
+  taunt_armscrossed: one('g_pose_armscrossed'),
+  taunt_phone: one('g_pose_phone'),
+  idle: one('g_pose_idle'),
+  defeated: one('g_defeated'), // already lying (head to the right; flipX with him facing left)
+  sulk: one('g_pose_think'),
+  idleBust: { frames: ['g_pose_armscrossed', 'g_pose_think'], perBeat: 0.5, loop: true },
+  throwBust: { frames: ['g_pose_wave', 'g_pose_point'], perBeat: 2, loop: false },
+} satisfies Record<keyof typeof FABINHO, SheetAnim> & Record<string, SheetAnim>;
+
+/** The crutch Rafa (level 2), from rafaela-muleta.PNG, drawn 1:1, ≈ 178 px with crutches. Origin x = her face,
+ *  y = feet / crutch tips. Her walk frames are near-copies (crutches and front foot never move; only the braced back
+ *  leg lifts), so src/game/rafaMuleta.ts builds the gait from them; `dance` is her victory at the altar. */
+export const RAFAMULETA_ATLAS = 'rafamuleta';
+export const RAFAMULETA = {
+  dance: { frames: ['dance_0', 'dance_1', 'dance_2', 'dance_3', 'dance_4'], perBeat: 1, loop: true },
+  walk: { frames: ['walk_0', 'walk_1', 'walk_2', 'walk_3'], perBeat: 4, loop: true },
+  crutch: { frames: ['crutch_0', 'crutch_1', 'crutch_2', 'crutch_3', 'crutch_4'], perBeat: 5, loop: true },
+  idle: one('g_pose_idle'),
+  phone: one('g_pose_phone'),
+  armsup: one('g_pose_armsup'),
+  point: one('g_pose_point'),
+} satisfies Record<string, SheetAnim>;
+
+/** Level-2 wedding cast, at the crutch Rafa's scale: `g_walk_*`/`g_run_*` are their sheets' small row used 1:1, and
+ *  the `g_pose_*` frames are row-2 poses scaled down to the same standing height. Origin x = face centre, y = feet;
+ *  frames face right. Walks are genuine 4-frame cycles (two per beat at the level's 4 blocks per beat); runs are
+ *  5-frame hurries. Faces/turnarounds are 1:1. */
+const wedding = (atlas: string) => ({
+  atlas,
+  walk: { frames: ['g_walk_0', 'g_walk_1', 'g_walk_2', 'g_walk_3'], perBeat: 8, loop: true },
+  run: { frames: ['g_run_0', 'g_run_1', 'g_run_2', 'g_run_3', 'g_run_4'], perBeat: 10, loop: true },
+  idle: { frames: ['g_pose_idle'], perBeat: 1, loop: false },
+  phone: { frames: ['g_pose_phone'], perBeat: 1, loop: false },
+  armsup: { frames: ['g_pose_armsup'], perBeat: 1, loop: false },
+  laugh: { frames: ['g_pose_laugh'], perBeat: 1, loop: false },
+  wave: { frames: ['g_pose_wave'], perBeat: 1, loop: false },
+  think: { frames: ['g_pose_think'], perBeat: 1, loop: false },
+} satisfies { atlas: string } & Record<string, SheetAnim | string>);
+export const GIOVANNI = wedding('giovanni');
+export const NATHALIA = wedding('nathalia');
+export const MURILO = wedding('murilo');

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { PHYS } from '../config';
+import { HIGH_Y, PHYS, TICKS_PER_BEAT as TPB } from '../config';
 import { replay, solve } from '../sim/solver';
 import { LEVELS } from './index';
 
@@ -14,7 +14,9 @@ describe.each(LEVELS)('level $id — $name', (def) => {
     expect(s.won).toBe(true);
     expect(shieldBreaks).toBe(0);
   });
-  it('needs the hop: with every jump a full big jump it is not beatable', () => {
+  // Levels 1–3's kindness rules make the hop optional; level1-gym/level2-church/level3-party.test.ts prove they are
+  // beatable with big jumps only.
+  it.skipIf(def.id === 'church' || def.id === 'gym' || def.id === 'party')('needs the hop: with every jump a full big jump it is not beatable', () => {
     const minHold = PHYS.minHoldTicks;
     PHYS.minHoldTicks = Infinity; // releasing never cuts the rise
     try {
@@ -31,5 +33,14 @@ describe.each(LEVELS)('level $id — $name', (def) => {
     } finally {
       PHYS.jumpVel = v;
     }
+  });
+  it('has a high hazard that forbids jumping: alone, walking under it is safe and any jump under it is a hit', () => {
+    const high = def.chart.filter((e) => e.t === 'hazard' && (e.b === 'static' || e.b === 'fly') && (e.y ?? 0) >= HIGH_Y);
+    const forbids = high.filter((h) => {
+      const alone = { ...def, sections: [], chart: [h], lengthBeats: h.beat + 2 };
+      const jumpAt = (beat: number, hold: number) => [{ tick: Math.round(beat * TPB), down: true }, { tick: Math.round((beat + hold) * TPB), down: false }];
+      return replay(alone, []).won && [-0.3, -0.2, -0.1].every((d) => [0.05, 0.5].every((hold) => replay(alone, jumpAt(h.beat + d, hold)).dead));
+    });
+    expect(forbids.length).toBeGreaterThan(0);
   });
 });

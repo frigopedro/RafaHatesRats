@@ -2,7 +2,7 @@
 // persistent pieces (Whey bubble, Gelol glow/vignette, beat line). Particles run on an "fx beat" that the scene keeps
 // advancing after a crash or a win, so bursts finish while the run itself is frozen. Camera shake/flash obey reduceFx.
 import Phaser from 'phaser';
-import { VIEW } from '../config';
+import { OVERDRIVE, PRE_TICKS, TICKS_PER_BEAT as TPB, VIEW } from '../config';
 import { getSettings } from '../save';
 import type { ItemKind } from '../types';
 import { ART_SCALE, BOSSES, findArt, PROPS } from './hazardViews';
@@ -39,6 +39,11 @@ export class Fx {
   private readonly pops: { text: Phaser.GameObjects.Text; t0: number; x: number; y: number }[] = [];
   private popNext = 0;
   private readonly shield: Img | null;
+  private readonly shieldRim: Img | null; // dark halo behind the bubble so it reads on light backgrounds too
+  private readonly bars: Phaser.GameObjects.Graphics; // power-up timers above her head
+  private readonly gelolIcon: Img | null;
+  private readonly preIcon: Img | null;
+  private wasOd = false;
   private readonly glow: Img;
   private readonly vignette: Img;
   private readonly beatLine: Phaser.GameObjects.Rectangle;
@@ -49,12 +54,29 @@ export class Fx {
 
   constructor(private readonly scene: Phaser.Scene) {
     gradient(scene, 'fx_glow', 128, 128, 'rgba(255,255,255,1)', 'rgba(255,255,255,0)', 0, 64);
-    gradient(scene, 'fx_vignette', 256, 144, 'rgba(255,255,255,0)', 'rgba(255,255,255,1)', 0.32, Math.hypot(256, 144) / 2);
+    // Gelol warmth: one pre-made vertical gradient strip over the floor band only (a full-screen vignette quad was the
+    // costliest fill on software WebGL; the floor strip covers ~20% of the view).
+    if (!scene.textures.exists('fx_heat')) {
+      const t = scene.textures.createCanvas('fx_heat', 4, 64)!, ctx = t.getContext(), gr = ctx.createLinearGradient(0, 0, 0, 64);
+      gr.addColorStop(0, 'rgba(255,255,255,0)');
+      gr.addColorStop(1, 'rgba(255,255,255,1)');
+      ctx.fillStyle = gr;
+      ctx.fillRect(0, 0, 4, 64);
+      t.refresh();
+    }
     this.glow = scene.add.image(0, 0, 'fx_glow').setBlendMode(Phaser.BlendModes.ADD).setTint(0xff7a1c).setDepth(18).setVisible(false);
     const sh = findArt(scene, 'shield');
-    this.shield = sh && scene.add.image(0, 0, sh.key, sh.frames[0]).setScale(ART_SCALE).setTint(0xbfe8ff).setDepth(21).setVisible(false);
+    this.shieldRim = sh && scene.add.image(0, 0, sh.key, sh.frames[0]).setTint(0x0c1a2e).setDepth(21).setVisible(false);
+    this.shield = sh && scene.add.image(0, 0, sh.key, sh.frames[0]).setScale(ART_SCALE).setTint(0xd4f0ff).setDepth(21).setVisible(false);
+    this.bars = scene.add.graphics().setDepth(32);
+    const icon = (name: string, scale: number) => {
+      const a = findArt(scene, name);
+      return a && scene.add.image(0, 0, a.key, a.frames[0]).setScale(scale).setDepth(33).setVisible(false);
+    };
+    this.gelolIcon = icon('gelol', 3);
+    this.preIcon = icon('pre', 2);
     this.beatLine = scene.add.rectangle(0, 0, 10, 8, 0xfff0b0).setOrigin(0, 0.5).setBlendMode(Phaser.BlendModes.ADD).setDepth(3);
-    this.vignette = scene.add.image(0, 0, 'fx_vignette').setOrigin(0, 0).setTint(0xff6a10).setDepth(30).setVisible(false);
+    this.vignette = scene.add.image(0, 0, 'fx_heat').setOrigin(0, 1).setTint(0xff6a10).setDepth(3).setVisible(false);
     for (let i = 0; i < MAX; i++) {
       const img = scene.add.image(0, 0, PROPS).setVisible(false);
       this.parts.push({ img, key: PROPS, frames: [], loop: 0, t0: 0, life: 0, x: 0, y: 0, vx: 0, vy: 0, g: 0, spin: 0, rot: 0, scale: 1, fade: false, alpha: 1 });
@@ -88,6 +110,7 @@ export class Fx {
     for (const p of this.parts) (p.life = 0), p.img.setVisible(false);
     for (const q of this.pops) (q.t0 = -1e9), q.text.setVisible(false);
     this.lastTrail = this.lastLine = this.lastZap = this.odSince = -1e9;
+    this.wasOd = false;
   }
 
   land(t: number, x: number, y: number): void {
@@ -109,7 +132,9 @@ export class Fx {
   }
 
   shieldBreak(t: number, x: number, y: number): void {
-    this.spawn('shield_break', t, x, y, 0.4, { tint: 0xbfe8ff });
+    this.spawn('shield_break', t, x, y, 0.5, { tint: 0xd4f0ff, scale: 1.25 });
+    this.spawn('smash', t, x, y, 0.4, { tint: 0xbfe8ff, scale: 2, add: true });
+    for (let i = 0; i < 6; i++) this.spawn('sparkle', t, x, y, 0.5, { vx: rnd(-500, 500), vy: rnd(-600, 200), tint: 0xd4f0ff });
   }
 
   ignite(t: number, x: number, y: number): void {
@@ -138,8 +163,33 @@ export class Fx {
     }
   }
 
-  /** Per frame. `t` = fx beat; (x, y) = Rafa's feet (world px); `cy` = her visual centre. */
-  update(t: number, x: number, y: number, cy: number, st: { od: boolean; pre: boolean; shield: boolean; alive: boolean }, view: { left: number; top: number; w: number; h: number }): void {
+  /** Power-up timers floating above her head (`headY`): a chunky Gelol bar and a thinner Pré-treino one, each with
+   *  its icon, draining with the beat; red and blinking on the beat at the end (steady with reduceFx). */
+  private drawBars(t: number, x: number, headY: number, odLeft: number, preLeft: number): void {
+    const g = this.bars.clear(), W = 1.2 * B, x0 = x + 0.5 * B - W; // ends half a block ahead of her: never over what is coming
+    let y0 = headY - 0.35 * B;
+    const bar = (left: number, total: number, warn: number, h: number, color: number, icon: Img | null) => {
+      const on = left > 0;
+      icon?.setVisible(on);
+      if (!on) return;
+      const f = Math.min(1, left / total), end = left <= warn;
+      const flash = end && !this.reduce && t - Math.floor(t) < 0.25; // blink: a bright flash on each beat over solid red
+      const top = y0 - h;
+      g.fillStyle(0x120c14, 1).fillRect(x0 - 4, top - 4, W + 8, h + 8);
+      g.fillStyle(0x4a4252, 1).fillRect(x0, top, W, h);
+      g.fillStyle(flash ? 0xffe8e0 : end ? 0xff2a1e : color, 1).fillRect(x0, top, W * f, h);
+      g.fillStyle(0xffffff, 0.45).fillRect(x0, top, W * f, Math.max(2, h / 4)); // gloss
+      if (end) g.lineStyle(4, flash ? 0xffffff : 0xff2a1e, 1).strokeRect(x0 - 4, top - 4, W + 8, h + 8);
+      icon?.setPosition(x0 - 8 - (icon?.displayWidth ?? 0) / 2, top + h / 2); // left of the bar, never over its fill
+      y0 = top - 34; // the next bar stacks above (clear of this one's icon)
+    };
+    bar(preLeft, PRE_TICKS / TPB, 2, 14, 0x9cff57, this.preIcon);
+    bar(odLeft, OVERDRIVE.beats, 3, 28, 0xffb03a, this.gelolIcon);
+  }
+
+  /** Per frame. `t` = fx beat; (x, y) = Rafa's feet (world px); `cy` = her visual centre (so her head is at 2·cy − y).
+   *  `odLeft` / `preLeft` = beats of Gelol / Pré-treino left (≤ 0: none). */
+  update(t: number, x: number, y: number, cy: number, st: { od: boolean; pre: boolean; shield: boolean; alive: boolean; odLeft?: number; preLeft?: number }, view: { left: number; top: number; w: number; h: number }): void {
     const { left, top, w, h } = view;
     const fb = t - Math.floor(t);
     // On-the-beat pulse: a glow along the floor line, strongest on the bar.
@@ -149,16 +199,25 @@ export class Fx {
     if (st.od && st.alive) {
       if (this.odSince < -1e8) this.odSince = t;
       const k = Math.min(1, (t - this.odSince) / 0.5);
-      this.glow.setVisible(true).setPosition(x, cy).setScale(3.2 + 0.4 * (1 - fb)).setAlpha(0.35 * k);
-      this.vignette.setVisible(true).setPosition(left, top).setDisplaySize(w, h).setAlpha(0.32 * k);
+      const sputter = (st.odLeft ?? 99) < 2; // the last 2 beats: the fire falters
+      const flick = sputter && Math.floor(t * 6) % 2 ? 0.25 : 1;
+      this.glow.setVisible(true).setPosition(x, cy).setScale(2.3 + 0.3 * (1 - fb)).setAlpha(0.45 * k * flick);
+      this.vignette.setVisible(true).setPosition(left, top + h).setDisplaySize(w, 2.4 * B).setAlpha(0.45 * k);
       for (; this.lastTrail + 1 / 12 <= t; this.lastTrail = Math.max(this.lastTrail + 1 / 12, t - 0.5)) {
-        this.spawn('fire', t, x - rnd(10, 40), y - rnd(20, 150), 0.5, { vy: -rnd(80, 200), vx: -rnd(0, 60), loop: 8, scale: rnd(0.9, 1.4), depth: 18 });
+        if (sputter && Math.random() < 0.6) continue;
+        this.spawn('fire', t, x - rnd(10, 40), y - rnd(20, 150), 0.5, { vy: -rnd(80, 200), vx: -rnd(0, 60), loop: 8, scale: rnd(0.9, 1.4) * (sputter ? 0.7 : 1), depth: 18 });
         if (Math.random() < 0.5) this.spawn('ember', t, x - rnd(0, 30), y - rnd(30, 180), 0.8, { vy: -rnd(150, 350), vx: -rnd(50, 200), depth: 18 });
       }
       for (; this.lastLine + 1 / 10 <= t; this.lastLine = Math.max(this.lastLine + 1 / 10, t - 0.5)) {
         this.spawn('speedline', t, left + w * rnd(0.6, 1.1), top + h * rnd(0.15, 0.85), 0.35, { vx: -2400, scale: rnd(1.5, 3), alpha: 0.45, tint: 0xffe0b0, depth: 2 });
       }
     } else {
+      // Overdrive just ended: a puff of smoke marks the exact frame.
+      if (this.wasOd && st.alive) {
+        this.spawn('smash', t, x, cy, 0.4, { tint: 0xffb070, scale: 1.6 });
+        this.spawn('dust', t, x - 30, y - 40, 0.5, { tint: 0xb8a898, scale: 1.6, vy: -120 });
+        this.spawn('dust', t, x + 10, cy, 0.5, { tint: 0xb8a898, scale: 1.4, vy: -160 });
+      }
       this.odSince = -1e9;
       this.glow.setVisible(false);
       this.vignette.setVisible(false);
@@ -170,8 +229,12 @@ export class Fx {
         this.spawn('zap', t, x + rnd(-0.6, 0.6) * B, cy + rnd(-1.1, 0.9) * B, 0.25, { rot: rnd(-0.6, 0.6), depth: 22 });
       }
     } else this.lastZap = t;
-    // Whey: a bubble around her that breathes on the beat.
-    this.shield?.setVisible(st.shield && st.alive).setPosition(x, cy).setAlpha(0.5 + 0.2 * (1 - fb)).setScale(ART_SCALE * (1 + 0.03 * (1 - fb)));
+    this.wasOd = st.od && st.alive;
+    // Whey: a bubble around her that breathes on the beat, with a dark halo so it reads on light walls too.
+    const bub = ART_SCALE * (1 + 0.03 * (1 - fb));
+    this.shield?.setVisible(st.shield && st.alive).setPosition(x, cy).setAlpha(0.7 + 0.2 * (1 - fb)).setScale(bub);
+    this.shieldRim?.setVisible(st.shield && st.alive).setPosition(x, cy).setAlpha(0.45).setScale(bub * 1.05);
+    this.drawBars(t, x, 2 * cy - y, st.alive ? st.odLeft ?? 0 : 0, st.alive ? st.preLeft ?? 0 : 0);
 
     for (const p of this.parts) {
       if (!p.img.visible) continue;

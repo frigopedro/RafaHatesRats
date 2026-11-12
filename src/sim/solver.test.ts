@@ -35,9 +35,9 @@ describe('solver', () => {
   });
 
   it('timing margin: a gap that needs pixel-perfect timing fails at ±60 ms but passes at 0', () => {
-    // Small hazard 1 beat after a plate rack: the big jump's landing leaves almost no room for the next hop.
+    // Small hazard 1 beat after a 1.0 × 1.2 pew end: the big jump's landing leaves almost no room for the next hop.
     const def = level([
-      { t: 'hazard', beat: 6, kind: 'plateRack', b: 'static' },
+      { t: 'hazard', beat: 6, kind: 'pewEnd', b: 'static' },
       { t: 'hazard', beat: 6.95, kind: 'kettlebell', b: 'static' },
     ]);
     expect(solve(def, { marginMs: 0 }).ok).toBe(true);

@@ -2,7 +2,7 @@
 // y is interpolated between the last two ticks. Drawing is a function of (beat, sim state); effects run on an
 // "fx beat" that keeps going after a crash or a win.
 import Phaser from 'phaser';
-import { RAFAGYM_ATLAS } from '../art/sheets';
+import { RAFAGYM_ATLAS, RAFAMULETA_ATLAS } from '../art/sheets';
 import { BOSS_AHEAD, CRASH_MS, HAZARDS, ITEM_SIZE, PLAYER, TICKS_PER_BEAT as TPB, VIEW } from '../config';
 import { hazardPos, type Pos } from '../sim/behaviors';
 import { compileLevel, createState, overdriveActive, step } from '../sim/sim';
@@ -11,11 +11,12 @@ import type { GameControl, GameHooks, Level, LevelDef, RafaKit, SimEvent, SimSta
 import { Background, BG_MANIFEST, themeFiles, type BgManifest } from './background';
 import { BOSS_DEFS, BossActor } from './bosses';
 import type { BeatClock } from './clock';
+import { Companion, Couple, Trail } from './companion';
 import { Fx } from './fx';
 import { ART_SCALE, BOSSES, findArt, PROPS, resetArtCache, WorldViews } from './hazardViews';
 import type { Input } from './input';
-import { createRafaKit, drawRafaKit, KITS_ATLAS, type RafaKitRig } from './rafaKits';
 import { createRafaGym, drawRafaGym } from './rafaGym';
+import { createRafaMuleta, drawRafaMuleta } from './rafaMuleta';
 import { createRafa, drawRafa, RAFA_ATLAS, type RafaFx } from './rafaView';
 
 export interface SceneOptions {
@@ -33,7 +34,7 @@ type Phase = 'ready' | 'run' | 'crash' | 'over' | 'won';
 const B = VIEW.block;
 const MAX_BEHIND = 30; // ticks; further behind than this (hitch, tab switch) we re-anchor instead of fast-forwarding
 const HITSTOP_MS = 90; // Rafa freezes this long on a crash before she tumbles
-const RAFA_H: Record<RafaKit, number> = { standing: 2.1, crutches: 2.3, wheelchair: 1.9 }; // visual height, blocks (effects centre on her)
+const RAFA_H: Record<RafaKit, number> = { standing: 2.1, crutches: 1.9, wheelchair: 1.9 }; // visual height, blocks (effects centre on her)
 
 const KNEE_MS = 1500; // level 1's ending: the victory cheer, then her knee goes
 /** Rafa per LevelDef.rafa: her atlas and view, all with drawRafa's call shape (`started` = the run has begun;
@@ -43,14 +44,10 @@ interface RafaView {
   create(scene: Phaser.Scene): unknown;
   draw(rig: unknown, s: SimState, fx: RafaFx, beat: number, x: number, y: number, od: boolean, nowMs: number, deadMs: number, started: boolean, ending: boolean): void;
 }
-const kitView = (kit: 'standing' | 'crutches'): RafaView => ({ // the derived rig; 'standing' was level 1's stand-in
-  atlas: KITS_ATLAS, url: 'art/kits', create: (sc) => createRafaKit(sc, kit),
-  draw: (r, s, fx, beat, x, y, od, now, dead, started) => drawRafaKit(r as RafaKitRig, s, fx, beat, x, y, od, now, dead, !started || s.won),
-});
 const RAFA: Record<RafaKit, RafaView> = {
   wheelchair: { atlas: RAFA_ATLAS, url: 'art/rafa', create: createRafa, draw: drawRafa as RafaView['draw'] },
   standing: { atlas: RAFAGYM_ATLAS, url: 'art/rafagym', create: createRafaGym, draw: drawRafaGym as RafaView['draw'] },
-  crutches: kitView('crutches'),
+  crutches: { atlas: RAFAMULETA_ATLAS, url: 'art/rafamuleta', create: createRafaMuleta, draw: drawRafaMuleta as RafaView['draw'] },
 };
 
 export class GameScene extends Phaser.Scene implements GameControl {
@@ -72,6 +69,9 @@ export class GameScene extends Phaser.Scene implements GameControl {
   private bg: Background | null = null;
   private views!: WorldViews;
   private boss: BossActor | null = null;
+  private companion: Companion | null = null;
+  private readonly trail = new Trail(); // Rafa's recent heights, for the people following her
+  private couple: Couple | null = null;
   private bossHit = false;
   private lastSkid = -1e9;
   private effects!: Fx;
@@ -108,6 +108,8 @@ export class GameScene extends Phaser.Scene implements GameControl {
     this.load.atlas(BOSSES, 'art/bosses.png', 'art/bosses.json');
     const boss = d.boss && BOSS_DEFS[d.boss];
     if (boss) this.load.atlas(boss.atlas, boss.png, boss.json);
+    Companion.preload(this, d);
+    if (d.theme === 'church') Couple.preload(this);
     this.load.json(BG_MANIFEST, 'art/bg/manifest.json');
     this.load.once(`filecomplete-json-${BG_MANIFEST}`, (_key: string, _type: string, m: BgManifest) => {
       for (const f of themeFiles(m, d.theme)) this.load.image(f, `art/${f}`);
@@ -128,6 +130,8 @@ export class GameScene extends Phaser.Scene implements GameControl {
     if (d.theme === 'gym') this.makeFinish(endX);
     this.views = new WorldViews(this, this.L, d.theme, man?.view.groundY ?? 296);
     if (d.boss) this.boss = new BossActor(this, this.L, BOSS_DEFS[d.boss]);
+    this.companion = Companion.create(this, d, this.trail);
+    if (man) this.couple = Couple.create(this, man, d.theme, endX, d.sections, this.trail, d.blocksPerBeat);
     const n = this.children.list.length;
     this.rafa = RAFA[d.rafa].create(this);
     for (const o of this.children.list.slice(n)) (o as Phaser.GameObjects.Image).setDepth?.(20); // in front of the world
@@ -205,8 +209,10 @@ export class GameScene extends Phaser.Scene implements GameControl {
       if (!this.o.bot) for (const e of edges) this.pending.push({ tick: Math.ceil(clock.beat(e.time) * TPB), down: e.down });
       let exact = clock.beat(now) * TPB;
       if (exact - this.s.tick > MAX_BEHIND) {
-        clock.reanchor(this.s.tick / TPB);
-        exact = this.s.tick;
+        // Advance one capped step and drop the rest: a hitch never fast-forwards, and a device that is slow every
+        // frame still moves at MAX_BEHIND ticks per frame instead of crawling one tick per frame.
+        exact = this.s.tick + MAX_BEHIND;
+        clock.reanchor(exact / TPB);
       }
       const target = Math.floor(exact) + 1;
       while (this.s.tick < target && this.phase === 'run') this.tick(now);
@@ -270,6 +276,7 @@ export class GameScene extends Phaser.Scene implements GameControl {
       }
       this.o.hooks.onSimEvent(e);
     }
+    this.trail.track(s);
   }
 
   /** Effects clock: the render beat during the run, then wall-clock beats after a crash or a win. */
@@ -298,21 +305,23 @@ export class GameScene extends Phaser.Scene implements GameControl {
     else this.drawGreyGround(left, right);
 
     const rx = left + Math.round(VIEW.playerX * w);
-    const pose = this.boss?.draw(beat, rx) ?? null;
+    const pose = this.boss?.draw(beat, rx, fxBeat) ?? null;
     if (pose?.skid && this.phase === 'run') {
       for (; this.lastSkid + 0.25 <= beat; this.lastSkid = Math.max(this.lastSkid + 0.25, beat - 0.5)) this.effects.land(beat, rx + (pose.ahead - 0.3) * B, 0);
     } else this.lastSkid = beat;
     if (pose?.hit && !this.bossHit) this.effects.hit(fxBeat, rx + pose.ahead * B, -1.2 * B);
     this.bossHit = !!pose?.hit;
-    this.views.draw(s, beat, left, right, rx + (BOSS_AHEAD + 0.01) * B, this.boss?.kinds ?? NO_KINDS);
+    this.views.draw(s, beat, left, right, rx + ((this.boss?.ahead ?? BOSS_AHEAD) + 0.01) * B, this.boss?.kinds ?? NO_KINDS);
 
     const started = this.phase !== 'ready';
     const deadMs = this.deadMs + HITSTOP_MS;
     // Idle (count-in, after the win) follows the fx beat so she keeps breathing while the run stands still.
     RAFA[d.rafa].draw(this.rafa, s, this.fx, !started || s.won ? fxBeat : beat, rx, -y * B, od, now, deadMs, started, s.won && now - this.endMs > KNEE_MS);
+    this.companion?.draw(s, beat, fxBeat, rx, started);
+    this.couple?.draw(s, beat, fxBeat, rx);
     const alive = this.fx.deadTick < 0 && !s.won;
     this.effects.update(fxBeat, rx, -y * B, -(y + RAFA_H[d.rafa] / 2) * B,
-      { od, pre: s.tick < s.preUntil, shield: s.shield, alive }, this.rect);
+      { od, pre: s.tick < s.preUntil, shield: s.shield, alive, odLeft: s.overdriveUntil - beat, preLeft: s.preUntil / TPB - beat }, this.rect);
 
     if (this.dbg) this.drawDebug(beat, rx, y);
   }

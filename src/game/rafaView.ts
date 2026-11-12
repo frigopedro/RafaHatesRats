@@ -31,7 +31,7 @@ export interface RafaSprite {
   glow: Phaser.FX.Glow | undefined; // Gelol outline (WebGL only)
 }
 
-export type RafaState = Pick<SimState, 'tick' | 'y' | 'vy' | 'support' | 'won' | 'overdriveFrom'>;
+export type RafaState = Pick<SimState, 'tick' | 'y' | 'vy' | 'support' | 'won' | 'overdriveFrom' | 'overdriveUntil'>;
 
 export function createRafa(scene: Phaser.Scene): RafaSprite {
   const body = scene.add.image(0, 0, RAFA_ATLAS, 'roll_0');

@@ -13,7 +13,6 @@
     "bake:bosses": "node scripts/bake-bosses.mjs",
     "bake:props": "node scripts/bake-props.mjs",
     "bake:bg": "node scripts/bake-bg.mjs",
-    "bake:kits": "node scripts/bake-kits.mjs",
     "audio:check": "node scripts/audio-check.mjs",
     "shots:gallery": "node scripts/shots-gallery.mjs",
     "shots:ui": "node scripts/shots-ui.mjs"

@@ -35,10 +35,12 @@ export const HAZARDS: Record<HazardKind, HazardDef> = {
   plate: { w: 0.7, h: 0.35, size: 'small', art: 'plate' }, // drawn lying flat (plate_flat) once on the floor
   ropeWave: { w: 0.7, h: 0.5, size: 'small', art: 'ropeWave' },
   treadmill: { w: 1.4, h: 0.9, size: 'big', art: 'treadmill' },
-  bench: { w: 1.2, h: 0.8, size: 'big', art: 'bench' },
-  plateRack: { w: 1.0, h: 1.2, size: 'big', art: 'plateRack' },
+  // Level 1 is the casual on-ramp (±110 ms): its big obstacles get narrow, forgiving hitboxes so a full jump clears them
+  // at ±125 ms (a 1.2-wide box tops out at ±95 ms with this jump). Gym kinds are used by level 1 only.
+  bench: { w: 0.7, h: 0.75, size: 'big', art: 'bench' },
+  plateRack: { w: 0.55, h: 0.95, size: 'big', art: 'plateRack' },
   barbellRack: { w: 1.4, h: 1.2, size: 'big', art: 'barbellRack' },
-  plyo: { w: 1.2, h: 1.1, size: 'big', art: 'plyo' },
+  plyo: { w: 0.65, h: 0.85, size: 'big', art: 'plyo' },
   bag: { w: 0.6, h: 1.0, size: 'big', art: 'bag' },
   // L1 Fabinho
   frisbee: { w: 0.7, h: 0.3, size: 'small', art: 'frisbee' },
@@ -51,7 +53,7 @@ export const HAZARDS: Record<HazardKind, HazardDef> = {
   rice: { w: 0.6, h: 0.4, size: 'small', art: 'rice' },
   flowerGirl: { w: 0.6, h: 0.6, size: 'small', art: 'flowerGirl' },
   ringBearer: { w: 0.6, h: 0.6, size: 'small', art: 'ringBearer' },
-  pewEnd: { w: 1.0, h: 1.2, size: 'big', art: 'pewEnd' },
+  pewEnd: { w: 0.9, h: 1.2, size: 'big', art: 'pewEnd' }, // 0.9 (DESIGN said 1.0): a lone 1.0 × 1.2 caps level 2 at ±80 ms
   candleStand: { w: 0.6, h: 1.2, size: 'big', art: 'candleStand' },
   flowerStand: { w: 0.9, h: 1.2, size: 'big', art: 'flowerStand' },
   photographer: { w: 1.2, h: 1.2, size: 'big', art: 'photographer' },
@@ -76,6 +78,9 @@ export const HAZARDS: Record<HazardKind, HazardDef> = {
 /** Boss actors stand this many blocks ahead of Rafa while fighting; an attack is released (leaves the boss's hands)
  *  when its hazard is here, so charts time attacks with releaseBeat() in src/sim/behaviors.ts. */
 export const BOSS_AHEAD = 9;
+/** O Aranha (level 3) throws from the roof of his party train, which sits closer than BOSS_AHEAD so the whole train fits
+ *  a 4:3 view. */
+export const ARANHA_AHEAD = 5.5;
 
 /** Renderer: logical view 1080 px tall, 1 block = 96 px; Rafa pinned 28% from the left. */
 export const VIEW = {

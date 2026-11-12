@@ -23,7 +23,7 @@
  * section name: intro warmup main gelol bossEnter boss1 boss2 boss3 finale (any other name plays 'main').
  */
 import type { BeatClock } from '../game/clock';
-import { TICKS_PER_BEAT as TPB } from '../config';
+import { PRE_TICKS, TICKS_PER_BEAT as TPB } from '../config';
 import type { LevelDef, SimEvent } from '../types';
 import { outputOffset, Sequencer, type Host } from './sequencer';
 import * as sfx from './sfx';
@@ -55,6 +55,7 @@ interface Run {
   seq: Sequencer;
   player: SongPlayer;
   bus: Bus | null;
+  preEnd: number; // beat the pré-treino runs out (-1 = none)
 }
 
 /** Default levels (0..1, squared into gain). */
@@ -124,13 +125,18 @@ export function createAudio(): Audio {
   const host: Host = {
     ctxNow: () => ctx!.currentTime,
     toCtx: (p) => p / 1000 + offset - MASTER_DELAY,
-    play(step, at, prev, od) {
-      const bus = (run!.bus ??= newBus());
-      if (od !== bus.od) bus.shelf.gain.setTargetAtTime(od ? 5 : 0, Math.max(at(step / STEPS), ctx!.currentTime), 0.01);
+    play(step, at, prev, od, countdown) {
+      const r = run!, bus = (r.bus ??= newBus()), beat = step / STEPS;
+      if (od !== bus.od) bus.shelf.gain.setTargetAtTime(od ? 5 : 0, Math.max(at(beat), ctx!.currentTime), 0.01);
       bus.od = od;
       bus.out.step = step;
-      run!.player.play(bus.out, step, at);
-      if (od || prev) run!.player.overdrive(bus.out, step, at, prev, od);
+      r.player.play(bus.out, step, at);
+      if (od || prev) r.player.overdrive(bus.out, step, at, prev, od, countdown);
+      // Pré-treino running out: ticks on its last two beats, a fizzle when it ends
+      for (let k = 2; k >= 0; k--) {
+        const b = r.preEnd - k;
+        if (b >= beat && b < beat + 1 / STEPS) (k ? sfx.preTick : sfx.fizzle)(bus.out, at(b));
+      }
     },
     cut: (from, pause) => cut(from, pause ? 30 : 0),
   };
@@ -155,7 +161,7 @@ export function createAudio(): Audio {
       api.stop();
       const song = SONGS[def.songId] ?? SONGS.gym;
       if (!SONGS[def.songId]) console.warn(`audio: no song '${def.songId}', playing 'gym'`);
-      run = { seq: new Sequencer(clock, host), player: new SongPlayer(song, def), bus: null };
+      run = { seq: new Sequencer(clock, host), player: new SongPlayer(song, def), bus: null, preEnd: -1 };
       run.seq.start(startBeat);
       ensure();
       lastCoin = -1e9;
@@ -202,7 +208,13 @@ export function createAudio(): Audio {
             sfx.coin(fx, t, COIN_STEPS[streak]);
           } else if (e.kind === 'gelol') sfx.ignite(fx, t);
           else if (e.kind === 'whey') sfx.whey(fx, t);
-          else sfx.pre(fx, t);
+          else {
+            sfx.pre(fx, t);
+            if (run) {
+              run.preEnd = (e.tick + PRE_TICKS) / TPB; // a second pickup restarts it, like the sim
+              cut(run.seq.rewind(), 0); // re-send what is already queued so stale ticks never sound
+            }
+          }
           break;
         case 'smash':
           sfx.smash(fx, t);
@@ -240,7 +252,7 @@ export function createAudio(): Audio {
 
     suspend() {
       suspended = true;
-      if (run && ctx) cut(run.seq.rewind(), 20);
+      if (run && ctx) cut(run.seq.hold(), 20);
       void ctx?.suspend().catch(() => {});
     },
     resume() {
