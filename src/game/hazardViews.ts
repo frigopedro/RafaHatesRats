@@ -1,4 +1,5 @@
-// World objects from the code-drawn atlases (props.*, bosses.*: 1 art px = 3 world px, nearest filtering): hazards,
+// World objects from the code-drawn atlases (props.*, bosses.*: 1 art px = 3 world px, nearest filtering; aranha.*:
+// the Aranha drawn at 4× that density, smooth filtering, for his spiderDive): hazards,
 // items, platforms, landing shadows, hint signs. Placement follows each frame's pivot: bottom-pivot frames at the
 // hitbox's bottom centre, centre-pivot frames at its centre. Animations are timed from the beat. Any frame missing
 // from the atlases falls back to the grey-box drawing below (one console warning per name), never a crash.
@@ -10,8 +11,9 @@ import type { HazardEvent, HazardKind, ItemKind, Level, SimState, Theme } from '
 type G = Phaser.GameObjects.Graphics;
 type Img = Phaser.GameObjects.Image;
 const B = VIEW.block;
-export const PROPS = 'props', BOSSES = 'bosses';
+export const PROPS = 'props', BOSSES = 'bosses', ARANHA = 'aranha';
 export const ART_SCALE = 3;
+export const ARANHA_SCALE = 0.75; // public/art/aranha.json meta.scale
 const PLAT: Record<Theme, string> = { gym: 'plat_gym', church: 'plat_church', party: 'plat_stage' };
 /** Ceiling height (art px from the view top, manifest coords) that hanging chains run up to. */
 const CEILING: Record<Theme, number> = { gym: 24, church: 16, party: 22 };
@@ -26,7 +28,7 @@ const artCache = new Map<string, Art | null>();
 export function findArt(scene: Phaser.Scene, base: string): Art | null {
   if (artCache.has(base)) return artCache.get(base)!;
   let art: Art | null = null;
-  for (const key of [PROPS, BOSSES]) {
+  for (const key of [PROPS, BOSSES, ARANHA]) {
     if (!scene.textures.exists(key)) continue;
     const t = scene.textures.get(key);
     const frames: string[] = [];
@@ -56,7 +58,7 @@ export class Pool {
     let o = this.a[this.n++];
     if (!o) this.a.push((o = this.scene.add.image(0, 0, key, frame).setDepth(this.depth)));
     else if (o.texture.key !== key || o.frame.name !== frame) o.setTexture(key, frame);
-    return o.setVisible(true).setScale(ART_SCALE).setRotation(0).setAlpha(1).setFlipX(false);
+    return o.setVisible(true).setScale(key === ARANHA ? ARANHA_SCALE : ART_SCALE).setRotation(0).setAlpha(1).setFlipX(false);
   }
   begin(): void {
     this.n = 0;

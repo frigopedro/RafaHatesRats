@@ -14,11 +14,11 @@ type Acts = Record<string, () => void>;
  *  `boss`: the bossEnter cue brings a boss (angry face); otherwise it is the church's dash to the altar.
  *  Each level has its own Rafa: `faces` (HUD, game over), `phone` (pause), `winImg` / `win2Img` (victory). */
 export const CARDS = [
-  { id: 'gym', name: 'Campeonato Gym Rats', kit: 'rafagym_turn_34.png', sub: 'Chefe: Fabinho', side: 'fabinhogym_turn_34.png', sidePx: false, boss: true,
+  { id: 'gym', name: 'Campeonato Gym Rats', kit: 'rafagym_turn_34.png', sub: 'Chefe: Fabinho', side: 'fabinhogym_turn_34.png', boss: true,
     faces: 'rafagym_face_', noSad: false, phone: 'rafagym_phone.png', win: '1º LUGAR!', winImg: 'rafagym_armsup.png', win2: '…e um LCA a menos.', win2Img: 'rafagym_knee.png' },
-  { id: 'church', name: 'A Madrinha', kit: 'rafamuleta_turn_34.png', sub: 'Missão: chegar ao altar', side: 'giovanni.png', sidePx: false, boss: false, flank: ['nathalia_turn_34.png', 'murilo_turn_34.png'],
+  { id: 'church', name: 'A Madrinha', kit: 'rafamuleta_turn_34.png', sub: 'Missão: chegar ao altar', side: 'giovanni.png', boss: false, flank: ['nathalia_turn_34.png', 'murilo_turn_34.png'],
     faces: 'rafamuleta_face_', noSad: true, phone: 'rafamuleta_phone.png', win: 'CHEGOU A TEMPO, MADRINHA!', winImg: 'rafamuleta_dance.png', win2: '', win2Img: '' },
-  { id: 'party', name: 'A Festa', kit: 'rafa_turn_34.png', sub: 'Chefe: O Aranha da Carreta', side: 'aranha_pose1.png', sidePx: true, boss: true,
+  { id: 'party', name: 'A Festa', kit: 'rafa_turn_34.png', sub: 'Chefe: O Aranha da Carreta', side: 'aranha_pose1.png', boss: true,
     faces: 'rafa_face_', noSad: false, phone: 'rafa_pose_phone.png', win: 'FIM! Rafa ainda odeia ratos.', winImg: 'rafa_pose_armsup.png', win2: '', win2Img: '' },
 ];
 export type Card = (typeof CARDS)[number];
@@ -26,8 +26,8 @@ export type Card = (typeof CARDS)[number];
 // Drawn heights relative to standing Rafa (sheets aren't drawn to a common scale); unlisted images (faces) = 1.
 const RATIO: Record<string, number> = {
   'rafagym_turn_34.png': 1, 'rafamuleta_turn_34.png': 1, 'rafamuleta_dance.png': 1, 'rafa_turn_34.png': 0.84,
-  'fabinhogym_turn_34.png': 0.88, 'giovanni.png': 1.18, 'aranha_pose1.png': 0.7,
-  'aranha_pose2.png': 0.8, 'nathalia_turn_34.png': 0.95, 'murilo_turn_34.png': 1.06,
+  'fabinhogym_turn_34.png': 1.18, 'giovanni.png': 1.1, 'aranha_pose1.png': 0.65,
+  'aranha_pose2.png': 0.76, 'nathalia_turn_34.png': 0.95, 'murilo_turn_34.png': 1.18,
 };
 const ratioOf = (src: string) => RATIO[src.slice(src.lastIndexOf('/') + 1)] ?? 1;
 
@@ -64,7 +64,7 @@ export const coinTotal = (d: LevelDef) => d.chart.filter((e) => e.t === 'item' &
 const FACES = ['smile', 'laugh', 'grin', 'shocked', 'sad', 'angry'] as const;
 type Face = (typeof FACES)[number];
 const esc = (s: string) => s.replace(/[&<>"]/g, (c) => `&#${c.charCodeAt(0)};`);
-/** An art/ui image; class `px` = crisp enlarged pixel art. */
+/** An art/ui image. */
 const img = (name: string, cls = '', alt = '') => `<img src="art/ui/${name}" class="${cls}" alt="${alt}" draggable="false">`;
 
 let root: HTMLElement, layer: HTMLElement, live: HTMLElement;
@@ -219,7 +219,7 @@ export function menu(next: LevelDef, a: { jogar(): void; fases(): void; ajustes(
   const done = CARDS.filter((c) => levelSave(c.id).done).length;
   const pips = CARDS.map((c, i) => `<i class="pip${levelSave(c.id).done ? ' done' : c === card ? ' now' : ''}">${i + 1}</i>`).join('');
   // Group photo, left to right; Rafa (this level's) in front, the rest overlapping a little. Feet share one floor line.
-  const cast = [img('aranha_pose1.png', 'px'), img('fabinhogym_turn_34.png'),
+  const cast = [img('aranha_pose1.png'), img('fabinhogym_turn_34.png'),
     `<span class="say" style="--rr:${Math.max(ratioOf(card.kit), RATIO['fabinhogym_turn_34.png'])}"><span class="bubble">${esc(menuLine(card.id))}</span></span>`,
     img(card.kit, 'rafa', 'Rafa'), img('giovanni.png'), img('nathalia_turn_34.png'), img('murilo_turn_34.png')].join('');
   const hint = !canFullscreen() && !isStandalone() ? `<p class="fs-hint">${FS_HINT}</p>` : '';
@@ -251,7 +251,7 @@ export function fases(a: { voltar(): void; play(d: LevelDef): void }): void {
       : '<span class="soon">Em breve</span>';
     return `
       <button class="card${s.done ? ' done' : ''}" data-act="lv-${c.id}" data-theme="${def?.theme ?? c.id}"${def ? '' : ' disabled'}>
-        <span class="win">${scene(def?.theme ?? (c.id as Theme))}<span class="card-art fig overlap">${img(c.kit, 'kit')}${img(c.side, `boss${c.sidePx ? ' px' : ''}`)}</span></span>
+        <span class="win">${scene(def?.theme ?? (c.id as Theme))}<span class="card-art fig overlap">${img(c.kit, 'kit')}${img(c.side, 'boss')}</span></span>
         <span class="num" aria-label="Fase ${i + 1}">${i + 1}</span>
         ${s.done ? '<span class="ribbon">CONCLUÍDA</span>' : ''}
         <span class="plaque">
@@ -341,7 +341,7 @@ export function gameOver(o: OverInfo, a: { retry(): void; menu(): void }): void 
     <button class="btn small sage corner" data-act="menu">MENU</button>
     <div class="panel over-card" data-theme="${o.def.theme}" tabindex="-1">
       <h2 class="tab">${esc(o.def.name)}</h2>
-      <div class="over-art${faces ? ' fig' : ''}">${img(`${facesOf(o.def)}${c.face === 'sad' && cardOf(o.def)?.noSad ? 'shocked' : c.face}.png`, 'over-face', '')}${c.boss ? img(c.boss, `over-boss${c.px ? ' px' : ''}${faces ? '' : ' figure'}`) : ''}</div>
+      <div class="over-art${faces ? ' fig' : ''}">${img(`${facesOf(o.def)}${c.face === 'sad' && cardOf(o.def)?.noSad ? 'shocked' : c.face}.png`, 'over-face', '')}${c.boss ? img(c.boss, `over-boss${faces ? '' : ' figure'}`) : ''}</div>
       <div class="over-text">
         <p class="joke">${c.line}</p>
         <div class="run" style="--p:${o.pct / 100};--b:${o.best}%">

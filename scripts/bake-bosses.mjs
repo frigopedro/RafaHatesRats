@@ -1,9 +1,10 @@
 // Bake the code-drawn characters (art-src/bosses/*.mjs: the Aranha, his train, rats, people) → public/art/bosses.png + bosses.json (Phaser JSON-hash atlas,
-// stored at 1×, meta.scale 3, per-frame anchor = ground-contact pivot), menu stills in public/art/ui/, and review
-// sheets in shots/bosses/ (every frame ×3 next to wheelchair Rafa's push_0 and a Fabinho-height bar, on a block grid).
+// stored at 1×, meta.scale 3, per-frame anchor = ground-contact pivot), the Aranha alone → public/art/aranha.png + .json
+// (stored at D×, meta.scale 3/D), his menu stills in public/art/ui/, and review sheets in shots/bosses/ (every frame at
+// world scale next to wheelchair Rafa's push_0 and a Fabinho-height bar, on a block grid).
 import fs from 'node:fs';
 import { PNG } from 'pngjs';
-import aranha from '../art-src/bosses/aranha.mjs';
+import aranha, { D } from '../art-src/bosses/aranha.mjs';
 import train, { ROOF, STAGE, WHEELS } from '../art-src/bosses/train.mjs';
 import rat from '../art-src/bosses/rat.mjs';
 import { church, party } from '../art-src/bosses/people.mjs';
@@ -18,7 +19,8 @@ for (const f of frames) {
 }
 
 const img = (w, h) => ({ w, h, data: new Uint8Array(w * h * 4) });
-const blit = (dst, src, dx, dy, s = 1) => {
+const blit = (dst, src, dx, dy, s = 1) => { // s may be fractional (nearest)
+  dx = Math.round(dx); dy = Math.round(dy);
   for (let y = 0; y < src.h * s; y++) for (let x = 0; x < src.w * s; x++) {
     const X = dx + x, Y = dy + y;
     if (X < 0 || Y < 0 || X >= dst.w || Y >= dst.h) continue;
@@ -33,40 +35,45 @@ const save = (file, im) => {
   fs.writeFileSync(file, PNG.sync.write(png));
 };
 
-// ---- atlas: shelf pack, 2 px gutter so nearest-filter sampling never bleeds ----
+// ---- atlases: shelf pack, 2 px gutter so filtered sampling never bleeds. The Aranha (drawn at D× density, smooth
+// filtering like the sheet characters) gets his own atlas; meta.scale keeps 1 art px = 3 world px for both. ----
 const PAD = 2, AW = 1024;
-let x = PAD, y = PAD, shelf = 0;
-const placed = [...frames].sort((a, b) => b.h - a.h).map((f) => {
-  if (x + f.w + PAD > AW) { x = PAD; y += shelf + PAD; shelf = 0; }
-  const p = { f, x, y };
-  x += f.w + PAD; shelf = Math.max(shelf, f.h);
-  return p;
-});
-const atlas = img(AW, y + shelf + PAD);
-const json = { frames: {}, meta: { image: 'bosses.png', format: 'RGBA8888', size: { w: atlas.w, h: atlas.h }, scale: 3,
-  source: 'scripts/bake-bosses.mjs' } };
-for (const { f, x, y } of placed) {
-  blit(atlas, f, x, y);
-  const rect = { x, y, w: f.w, h: f.h };
-  json.frames[f.name] = { frame: rect, rotated: false, trimmed: false, spriteSourceSize: { x: 0, y: 0, w: f.w, h: f.h },
-    sourceSize: { w: f.w, h: f.h }, anchor: { x: f.ax / f.w, y: f.ay / f.h } };
+function pack(list, name, scale) {
+  let x = PAD, y = PAD, shelf = 0;
+  const placed = [...list].sort((a, b) => b.h - a.h).map((f) => {
+    if (x + f.w + PAD > AW) { x = PAD; y += shelf + PAD; shelf = 0; }
+    const p = { f, x, y };
+    x += f.w + PAD; shelf = Math.max(shelf, f.h);
+    return p;
+  });
+  const atlas = img(AW, y + shelf + PAD);
+  const json = { frames: {}, meta: { image: `${name}.png`, format: 'RGBA8888', size: { w: atlas.w, h: atlas.h }, scale,
+    source: 'scripts/bake-bosses.mjs' } };
+  for (const { f, x, y } of placed) {
+    blit(atlas, f, x, y);
+    const rect = { x, y, w: f.w, h: f.h };
+    json.frames[f.name] = { frame: rect, rotated: false, trimmed: false, spriteSourceSize: { x: 0, y: 0, w: f.w, h: f.h },
+      sourceSize: { w: f.w, h: f.h }, anchor: { x: f.ax / f.w, y: f.ay / f.h } };
+  }
+  return { atlas, json };
 }
+const write = (name, { atlas, json }) => {
+  save(`public/art/${name}.png`, atlas);
+  fs.writeFileSync(`public/art/${name}.json`, JSON.stringify(json, null, 1));
+  console.log(`${name}: ${Object.keys(json.frames).length} frames, atlas ${atlas.w}×${atlas.h}`);
+};
+const spider = pack(aranha, 'aranha', 3 / D);
 // The dive hazard reuses the tuck, pivoted at its centre so it can spin in place.
-json.frames.spiderDive = { ...json.frames.aranha_flip_1, anchor: { x: 0.5, y: 0.5 } };
+spider.json.frames.spiderDive = { ...spider.json.frames.aranha_flip_1, anchor: { x: 0.5, y: 0.5 } };
+write('aranha', spider);
+const rest = pack(frames.filter((f) => !aranha.includes(f)), 'bosses', 3);
 // People hazards are also reachable by their HAZARDS[kind].art name (first frame of the cycle).
-for (const n of ['photographer', 'flowerGirl', 'ringBearer', 'waiter']) json.frames[n] = json.frames[`${n}_0`];
-save('public/art/bosses.png', atlas);
-fs.writeFileSync('public/art/bosses.json', JSON.stringify(json, null, 1));
+for (const n of ['photographer', 'flowerGirl', 'ringBearer', 'waiter']) rest.json.frames[n] = rest.json.frames[`${n}_0`];
+write('bosses', rest);
 
-// ---- DOM stills ×6 ----
+// ---- DOM stills: the frames 1:1 (smooth-scaled in CSS like the sheet stills) ----
 fs.mkdirSync('public/art/ui', { recursive: true });
-for (const [file, name] of [['aranha_pose1', 'aranha_pose1'], ['aranha_pose2', 'aranha_pose2']]) {
-  const f = frames.find((q) => q.name === name);
-  if (!f) throw new Error(`missing frame ${name} for a menu still`);
-  const im = img(f.w * 6, f.h * 6);
-  blit(im, f, 0, 0, 6);
-  save(`public/art/ui/${file}.png`, im);
-}
+for (const name of ['aranha_pose1', 'aranha_pose2']) save(`public/art/ui/${name}.png`, aranha.find((q) => q.name === name));
 
 // ---- review sheets ----
 
@@ -103,9 +110,9 @@ function backdrop(im, theme, X, Y0, w, gy, Y1) {
 
 function sheet(list, file, s = S, withRefs = true, theme) {
   const cells = list.map((f) => {
-    const fw = f.w * s, fh = f.h * s, refW = withRefs ? 16 + 10 + rafa.w + 14 : 0;
-    const above = Math.max(f.ay * s, withRefs ? 2.5 * BLOCK : 0), below = Math.max(theme ? 36 : 0, (f.h - f.ay) * s);
-    return { f, w: refW + fw + 40, h: 24 + above + below + 16, above, refW };
+    const k = s / (f.d ?? 1), fw = Math.ceil(f.w * k), refW = withRefs ? 16 + 10 + rafa.w + 14 : 0;
+    const above = Math.round(Math.max(f.ay * k, withRefs ? 2.5 * BLOCK : 0)), below = Math.ceil(Math.max(theme ? 36 : 0, (f.h - f.ay) * k));
+    return { f, k, w: refW + fw + 40, h: 24 + above + below + 16, above, refW };
   });
   const W = 1900, rows = [];
   let row = [], rw = 0;
@@ -119,7 +126,7 @@ function sheet(list, file, s = S, withRefs = true, theme) {
     const rh = Math.max(...r.map((c) => c.h));
     let X = 0;
     for (const c of r) {
-      const gy = Y + 24 + c.above, f = c.f, fx = X + c.refW + 20, pxX = fx + f.ax * s;
+      const gy = Y + 24 + c.above, f = c.f, fx = X + c.refW + 20, pxX = Math.round(fx + f.ax * c.k);
       if (theme) backdrop(im, theme, X, Y + 20, c.w - 6, gy, Y + rh - 4);
       for (let g = gy; g > Y + 20; g -= BLOCK) rectF(im, X, g, c.w - 6, 1, GRID); // 1-block grid from the ground up
       for (let g = pxX % BLOCK; g < c.w; g += BLOCK) if (X + g >= X && X + g < X + c.w - 6) rectF(im, X + g, Y + 20, 1, rh - 24, GRID);
@@ -128,7 +135,7 @@ function sheet(list, file, s = S, withRefs = true, theme) {
         rectF(im, X + 4, gy - 2.5 * BLOCK, 16, 2.5 * BLOCK, FAB); // Fabinho standing height
         blit(im, rafa, X + 30, gy - rafaAy);
       }
-      blit(im, f, fx, gy - f.ay * s, s);
+      blit(im, f, fx, gy - f.ay * c.k, c.k);
       rectF(im, pxX - 4, gy, 9, 1, PIV); rectF(im, pxX, gy - 4, 1, 9, PIV);
       text(im, X + 4, Y + 4, `${f.name} ${f.w}×${f.h}`, INK);
       X += c.w;
@@ -142,7 +149,7 @@ function sheet(list, file, s = S, withRefs = true, theme) {
 const get = (n) => frames.find((f) => f.name === n);
 const compose = (name, parts) => {
   const im = img(240, 210), ox = 120, oy = 200;
-  for (const [f, x, y] of parts) blit(im, f, ox + x - f.ax, oy + y - f.ay);
+  for (const [f, x, y] of parts) blit(im, f, ox + x - f.ax / (f.d ?? 1), oy + y - f.ay / (f.d ?? 1), 1 / (f.d ?? 1));
   return { name, ...im, ax: ox, ay: oy };
 };
 const trainPreview = compose('preview_train', [[get('train_body'), 0, 0], [get('train_speaker_1'), 0, 0], [get('train_bulbs_0'), 0, 0],
@@ -154,4 +161,3 @@ const extra = { train: [trainPreview] };
 for (const [g, list] of Object.entries(GROUPS)) if (list.length && (!only || only === g)) sheet([...list, ...(extra[g] ?? [])], `shots/bosses/${g}.png`, S, true, THEME[g]);
 const sig = ['aranha_pose1', 'aranha_pose1_b', 'aranha_pose2', 'aranha_pose2_b'].map((n) => frames.find((f) => f.name === n));
 sheet(sig, 'shots/bosses/aranha-signature-x8.png', 8, false, 'party');
-console.log(`bosses: ${frames.length} frames, atlas ${atlas.w}×${atlas.h}`);

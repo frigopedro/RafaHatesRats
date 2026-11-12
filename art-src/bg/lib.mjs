@@ -116,7 +116,7 @@ export function crop(src, x, y, w, h) {
   return c;
 }
 export function scale(src, k) {
-  const c = canvas(src.w * k, src.h * k);
+  const c = canvas(Math.round(src.w * k), Math.round(src.h * k)); // k may be fractional (nearest)
   for (let y = 0; y < c.h; y++) for (let x = 0; x < c.w; x++) {
     const s = (((y / k) | 0) * src.w + ((x / k) | 0)) * 4, d = (y * c.w + x) * 4;
     c.d[d] = src.d[s]; c.d[d + 1] = src.d[s + 1]; c.d[d + 2] = src.d[s + 2]; c.d[d + 3] = src.d[s + 3];

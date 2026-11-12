@@ -78,6 +78,7 @@ fs.writeFileSync(`${OUT}/manifest.json`, JSON.stringify(manifest, null, 1).repla
 const atlas = (name) => ({ img: load(`public/art/${name}.png`), json: JSON.parse(fs.readFileSync(`public/art/${name}.json`, 'utf8')) });
 const frame = (a, name) => { const f = a.json.frames[name].frame; return crop(a.img, f.x, f.y, f.w, f.h); };
 const rafaAtlas = atlas('rafa'), props = atlas('props'), bosses = fs.existsSync('public/art/bosses.json') ? atlas('bosses') : null;
+const spider = fs.existsSync('public/art/aranha.json') ? atlas('aranha') : null; // drawn at 4× density (meta.scale 0.75)
 const push0 = { c: frame(rafaAtlas, 'push_0'), ax: rafaAtlas.json.frames.push_0.anchor.x * rafaAtlas.json.frames.push_0.frame.w, ay: rafaAtlas.json.frames.push_0.anchor.y * rafaAtlas.json.frames.push_0.frame.h };
 const GYM_PROPS = ['kettlebell', 'treadmill', 'dumbbell', 'bench', 'plateRack'];
 const mod = (a, n) => ((a % n) + n) % n;
@@ -143,11 +144,11 @@ function mock(t, w, camLeft, phase, altarAt = null) {
     // stand-ins in the grey-box colours: small 0.6, big 1.2, and a high one with its bottom at 1.8 blocks
     box(1.8, 0.6, 0.6, 0, '#f2a03a'); box(3.4, 1.2, 1.2, 0, '#d8433f'); box(5.4, 0.7, 0.4, 1.8, '#a25ce8');
   }
-  if (t.name === 'party' && bosses?.json.frames.train_body) {
+  if (t.name === 'party' && bosses?.json.frames.train_body && spider) {
     // the party train ~9 blocks ahead with the Aranha in pose 1 on its roof (90 art px up, stage x −94…+24)
-    const tb = bosses.json.frames.train_body, ap = bosses.json.frames.aranha_pose1, tx = rx + 9 * B;
+    const tb = bosses.json.frames.train_body, ap = spider.json.frames.aranha_pose1, tx = rx + 9 * B, SA = S * spider.json.meta.scale / 3;
     blit(big, scale(frame(bosses, 'train_body'), S), Math.round(tx - tb.anchor.x * tb.frame.w * S), Math.round(gy - tb.anchor.y * tb.frame.h * S));
-    blit(big, scale(frame(bosses, 'aranha_pose1'), S), Math.round(tx - 35 * S - ap.anchor.x * ap.frame.w * S), Math.round(gy - 90 * S - ap.anchor.y * ap.frame.h * S));
+    blit(big, scale(frame(spider, 'aranha_pose1'), SA), Math.round(tx - 35 * S - ap.anchor.x * ap.frame.w * SA), Math.round(gy - 90 * S - ap.anchor.y * ap.frame.h * SA));
   }
   // a golden-dumbbell stand-in at hop-apex height
   ellipse(big, Math.round(rx + 1.2 * B), gy - 2.2 * B, 24, 24, ol); ellipse(big, Math.round(rx + 1.2 * B), gy - 2.2 * B, 20, 20, '#f5c23a');

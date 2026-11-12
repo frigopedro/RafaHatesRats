@@ -103,9 +103,11 @@ Optional platforms: low stage risers (`plat_stage`).
 
 The derived rigs (`rafaKits`, `kits` atlas) are retired: every Rafa now comes from a sheet. In-game scale is each sheet's small row used 1:1 (~170–200 px); the wedding cast's `g_` frames match that.
 
+**Heights** (standing, relative to standing Rafa = 1.00, same in game and menus): Nathalia 0.95 · Rafa 1.00 · Giovanni 1.10 · Fabinho 1.18 = Murilo 1.18. Heads stay the same size across the cast. The wedding cast gets the height from a body stretch below the neck, head kept (`WEDDING.stretch` in `scripts/slice-sheet.mjs`). Fabinho's sheet draws him smaller than gym Rafa, head included, so his in-game frames are scaled up uniformly ×1.32 (head then ≈ hers). Menus: `RATIO` in `src/ui/screens.ts`.
+
 Wedding-sheet frames share one naming scheme (`turn_*`, `pose_*`, `run_*`, `walk_*`, `face_*`); in-game-scale copies are prefixed `g_`. The generic drawn `bride`/`groom` in `public/art/bosses.*` are only a fallback if an atlas is missing.
 
-**Drawn in code** (pixel art, 32 art px per block, stored 1× with `meta.scale: 3`, drawn ×3 nearest): O Aranha da Carreta and the party train (`public/art/bosses.*`), gym props, items, effects (`public/art/props.*`), backgrounds (`public/art/bg/`), logo. `spider-pos1.jpg` / `spider-pos2.jpg` are pose references of real people at a private party: never shipped, copied or committed.
+**Drawn in code** (pixel art, 32 art px per block, stored 1× with `meta.scale: 3`, drawn ×3 nearest): the party train (`public/art/bosses.*`), O Aranha da Carreta (`public/art/aranha.*`: drawn at 4× that density to match the sheet characters, `meta.scale: 0.75`, smooth filtering), gym props, items, effects (`public/art/props.*`), backgrounds (`public/art/bg/`), logo. `spider-pos1.jpg` / `spider-pos2.jpg` are pose references of real people at a private party: never shipped, copied or committed.
 
 **Art contract for code-drawn art:** palette from `art-src/palette.json`, outline `#140b09`; 16-bit arcade quality (≥ 3 tones per material, highlight, readable silhouette at phone size); sprites ~1.25–1.4× their hitbox; Phaser JSON-hash atlas with per-frame pivot/anchor (bottom-centre at ground contact for ground things, centre for flying things, items, effects). Size class must be readable from shape alone. **Backgrounds must never look jumpable:** anything near the floor line is rendered as low-contrast silhouettes in the wall's own tones, with its bottom faded out.
 

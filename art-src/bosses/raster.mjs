@@ -56,8 +56,10 @@ const lerpArr = (r, t) => {
 
 export class Sprite {
   // k scales every shape and painted detail (pose coords stay the same); clipY hides anything at or below that y.
-  constructor({ w = 240, h = 220, ox = 120, oy = 200, k = 1, clipY = Infinity } = {}) {
-    Object.assign(this, { w, h, ox, oy, k, clipY });
+  // ol / il: outer outline and inner contour (and late-line) widths in canvas px, for sprites drawn at k > 1;
+  // dither: strength of the 2×2 dither at the tone band edges (0 = clean bands).
+  constructor({ w = 240, h = 220, ox = 120, oy = 200, k = 1, clipY = Infinity, ol = 1, il = 1, dither = 0.09 } = {}) {
+    Object.assign(this, { w, h, ox, oy, k, clipY, ol, il, dither });
     const n = w * h;
     this.mat = new Array(n).fill(null);
     this.grp = new Array(n).fill(null);
@@ -151,20 +153,21 @@ export class Sprite {
       const n = RGB[m].length;
       if (this.flat[i] >= 0) { this.idx[i] = Math.min(n - 1, this.flat[i] + this.tex[i]); continue; }
       const x = i % w, y = (i - x) / w;
-      let v = (this.lit[i] + 0.35) / 1.3 - 0.24 * this.dim[i] + (BAYER[(y & 1) * 2 + (x & 1)] / 4 - 0.375) * 0.09;
+      let v = (this.lit[i] + 0.35) / 1.3 - 0.24 * this.dim[i] + (BAYER[(y & 1) * 2 + (x & 1)] / 4 - 0.375) * this.dither;
       let k = 0;
       for (const b of BANDS[n]) if (v > b) k++;
       if (this.tex[i] && k > 0) k = Math.max(0, Math.min(n - 1, k + this.tex[i]));
       this.idx[i] = k;
     }
     // Contour: a pixel touching a nearer part of another group becomes outline.
-    const out = [];
+    const out = [], il = this.il;
     for (let i = 0; i < w * h; i++) {
       if (this.mat[i] === null) continue;
-      const x = i % w;
-      for (const j of [i - 1, i + 1, i - w, i + w]) {
-        if (j < 0 || j >= w * h || (j === i - 1 && x === 0) || (j === i + 1 && x === w - 1)) continue;
-        if (this.mat[j] !== null && this.grp[j] !== this.grp[i] && this.z[j] > this.z[i] + 0.3) { out.push(i); break; }
+      const x = i % w, y = (i - x) / w;
+      search: for (let dy = -il; dy <= il; dy++) for (let dx = -il; dx <= il; dx++) {
+        const X = x + dx, Y = y + dy, j = Y * w + X;
+        if (Math.abs(dx) + Math.abs(dy) > il || X < 0 || Y < 0 || X >= w || Y >= h) continue;
+        if (this.mat[j] !== null && this.grp[j] !== this.grp[i] && this.z[j] > this.z[i] + 0.3) { out.push(i); break search; }
       }
     }
     for (const i of out) this.mat[i] = OUT;
@@ -201,28 +204,34 @@ export class Sprite {
   }
   stroke(pts, m, k = 0) { for (let i = 0; i < pts.length - 1; i++) this.line(pts[i], pts[i + 1], (x, y) => this.set(x, y, m, k)); return this; }
   dstroke(pts, d = -1) { for (let i = 0; i < pts.length - 1; i++) this.line(pts[i], pts[i + 1], (x, y) => this.shade(x, y, d)); return this; }
-  // Painted disc/ellipse (flat tone), for eyes, bolts, bulbs.
-  dot(c, rx, ry, m, tone = 0, onlyOpaque = false) {
-    const k = this.k, cx = c[0] * k, cy = c[1] * k, Rx = rx * k, Ry = ry * k;
-    for (let y = Math.floor(cy - Ry) - 1; y <= cy + Ry + 1; y++) for (let x = Math.floor(cx - Rx) - 1; x <= cx + Rx + 1; x++) {
-      const ex = (x + 0.5 - cx) / Rx, ey = (y + 0.5 - cy) / Ry, i = this.atc(x, y);
+  // Painted disc/ellipse (flat tone), for eyes, bolts, bulbs; ang turns it.
+  dot(c, rx, ry, m, tone = 0, onlyOpaque = false, ang = 0) {
+    const k = this.k, cx = c[0] * k, cy = c[1] * k, Rx = rx * k, Ry = ry * k, R = Math.max(Rx, Ry), cs = Math.cos(ang), sn = Math.sin(ang);
+    for (let y = Math.floor(cy - R) - 1; y <= cy + R + 1; y++) for (let x = Math.floor(cx - R) - 1; x <= cx + R + 1; x++) {
+      const qx = x + 0.5 - cx, qy = y + 0.5 - cy, ex = (qx * cs + qy * sn) / Rx, ey = (qy * cs - qx * sn) / Ry, i = this.atc(x, y);
       if (i >= 0 && ex * ex + ey * ey <= 1 && (!onlyOpaque || this.mat[i] !== null)) { this.mat[i] = m; this.idx[i] = tone; }
     }
     return this;
   }
 
   // Pixels painted after the outer outline (thin lines that stand alone, e.g. whiskers).
-  late(x, y, m, k = 0) { (this.lateList ??= []).push([this.at(x, y), m, k]); return this; }
+  late(x, y, m, k = 0) {
+    const X = Math.floor(x * this.k) - (this.il >> 1), Y = Math.floor(y * this.k) - (this.il >> 1);
+    for (let j = 0; j < this.il; j++) for (let i = 0; i < this.il; i++) (this.lateList ??= []).push([this.atc(X + i, Y + j), m, k]);
+    return this;
+  }
   lateLine(a, b, m, k = 0) { return this.line(a, b, (x, y) => this.late(x, y, m, k)); }
 
   // Outer outline, trim, RGBA. Pivot = the ground-contact origin, or `pivot` [x, y] in sprite coords.
   finish(pivot = [0, 0]) {
     const { w, h } = this;
     const solid = (x, y) => x >= 0 && y >= 0 && x < w && y < h && this.mat[y * w + x] !== null;
-    const edge = [];
-    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++)
-      if (!solid(x, y) && (solid(x - 1, y) || solid(x + 1, y) || solid(x, y - 1) || solid(x, y + 1))) edge.push(y * w + x);
-    for (const i of edge) this.mat[i] = OUT;
+    for (let n = 0; n < this.ol; n++) {
+      const edge = [];
+      for (let y = 0; y < h; y++) for (let x = 0; x < w; x++)
+        if (!solid(x, y) && (solid(x - 1, y) || solid(x + 1, y) || solid(x, y - 1) || solid(x, y + 1))) edge.push(y * w + x);
+      for (const i of edge) this.mat[i] = OUT;
+    }
     for (const [i, m, k] of this.lateList ?? []) if (i >= 0) { this.mat[i] = m; this.idx[i] = k; }
     let x0 = w, y0 = h, x1 = -1, y1 = -1;
     for (let i = 0; i < w * h; i++) if (this.mat[i] !== null) {

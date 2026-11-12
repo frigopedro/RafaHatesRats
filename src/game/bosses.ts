@@ -11,7 +11,7 @@ import { ARANHA_AHEAD, BOSS_AHEAD, VIEW } from '../config';
 import { releaseBeat } from '../sim/behaviors';
 import { createFabinhoGymRun, drawFabinhoGymRun, type FabinhoGymRun } from './fabinhoGym';
 import type { BossId, HazardKind, Level } from '../types';
-import { ART_SCALE, BOSSES } from './hazardViews';
+import { ARANHA, ARANHA_SCALE, ART_SCALE, BOSSES } from './hazardViews';
 
 const B = VIEW.block;
 
@@ -27,7 +27,7 @@ export interface BossPose {
 export interface TrainPose { ahead: number; crash?: number }
 export interface BossDef {
   atlas: string; png: string; json: string;
-  scale: number; // 1: sliced from a user sheet (1:1, smooth); 3: code-drawn (×3, nearest)
+  scale: number; // 1: sliced from a user sheet (1:1, smooth); 3: code-drawn (×3, nearest); < 1: code-drawn at sheet density (smooth)
   ahead: number; // blocks ahead of Rafa where his attacks leave his hands (dsl attack()'s `ahead`)
   train?: boolean; // rides the party train
   cheer?: [atlas: string, dx: number][]; // sheet characters (art/<atlas>, g_pose_*) cheering dx blocks from the finish line
@@ -101,6 +101,7 @@ export const fabinho: BossDef = {
 
 // --- O Aranha da Carreta (level 3): dances funk on the roof of the party train, which rolls a constant distance ---
 // --- ahead of Rafa. Train geometry: art-src/bosses/train.mjs, art px from the body's ground pivot (×3 on screen). ---
+// --- His own frames are in art/aranha (drawn at the sheet characters' density). ---
 const PX = 1 / 32; // art px → blocks
 const ROOF = 90 * PX; // roof top
 const TRAIN = ARANHA_AHEAD + 2; // body pivot: the cab's nose (+97 px) stays inside a 4:3 view (10.8 blocks ahead of Rafa)
@@ -115,7 +116,7 @@ const dance = (beat: number) => onRoof(`aranha_step_${Math.floor(beat) & 3}`); /
 const squat = (beat: number) => onRoof(frac(beat) < 0.35 ? 'aranha_pose1_b' : 'aranha_pose1'); // the taunt: bounces down on every beat
 
 export const aranha: BossDef = {
-  atlas: BOSSES, png: 'art/bosses.png', json: 'art/bosses.json', scale: ART_SCALE, ahead: ARANHA_AHEAD, train: true,
+  atlas: ARANHA, png: 'art/aranha.png', json: 'art/aranha.json', scale: ARANHA_SCALE, ahead: ARANHA_AHEAD, train: true,
   cheer: [['giovanni', -2.4], ['nathalia', 2.3], ['murilo', 3.9]], // the win: the couple and Giovanni around her on the floor
   attacks: { web: 'webBlob', line: 'webLine', dive: 'spiderDive' },
   pose({ name, t, release: r }, beat) {
@@ -235,11 +236,11 @@ export class BossActor {
       this.cues.push({ beat: c.beat, name, release: rel });
     }
     this.kinds = new Set(Object.values(def.attacks));
-    if (def.scale !== 1 && scene.textures.exists(def.atlas)) scene.textures.get(def.atlas).setFilter(Phaser.Textures.FilterMode.NEAREST);
+    if (def.scale > 1 && scene.textures.exists(def.atlas)) scene.textures.get(def.atlas).setFilter(Phaser.Textures.FilterMode.NEAREST);
     this.img = scene.add.image(0, 0, def.atlas).setScale(def.scale).setDepth(8).setVisible(false);
     this.legs = def.atlas === FABINHOGYM_ATLAS ? createFabinhoGymRun(scene) : null;
     this.legs?.root.setDepth(8).setVisible(false);
-    this.train = def.train ? new Train(scene, def.atlas, bpb) : null;
+    this.train = def.train ? new Train(scene, BOSSES, bpb) : null; // the train stays in the bosses atlas
     // Optional sheets: loaded after preload; a missing atlas leaves that person out.
     const endX = L.def.lengthBeats * bpb * B;
     this.cheer = (def.cheer ?? []).map(([atlas, dx]) => ({ atlas, x: endX + dx * B, flip: dx > 0, img: null }));

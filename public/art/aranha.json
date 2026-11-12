@@ -1,0 +1,398 @@
+{
+ "frames": {
+  "aranha_flip_0": {
+   "frame": {
+    "x": 2,
+    "y": 2,
+    "w": 213,
+    "h": 355
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 213,
+    "h": 355
+   },
+   "sourceSize": {
+    "w": 213,
+    "h": 355
+   },
+   "anchor": {
+    "x": 0.5070422535211268,
+    "y": 0.9943661971830986
+   }
+  },
+  "aranha_step_0": {
+   "frame": {
+    "x": 217,
+    "y": 2,
+    "w": 132,
+    "h": 323
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 132,
+    "h": 323
+   },
+   "sourceSize": {
+    "w": 132,
+    "h": 323
+   },
+   "anchor": {
+    "x": 0.6893939393939394,
+    "y": 0.9907120743034056
+   }
+  },
+  "aranha_step_2": {
+   "frame": {
+    "x": 351,
+    "y": 2,
+    "w": 147,
+    "h": 323
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 147,
+    "h": 323
+   },
+   "sourceSize": {
+    "w": 147,
+    "h": 323
+   },
+   "anchor": {
+    "x": 0.4217687074829932,
+    "y": 0.9907120743034056
+   }
+  },
+  "aranha_web_0": {
+   "frame": {
+    "x": 500,
+    "y": 2,
+    "w": 177,
+    "h": 315
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 177,
+    "h": 315
+   },
+   "sourceSize": {
+    "w": 177,
+    "h": 315
+   },
+   "anchor": {
+    "x": 0.5480225988700564,
+    "y": 0.9904761904761905
+   }
+  },
+  "aranha_defeat_0": {
+   "frame": {
+    "x": 679,
+    "y": 2,
+    "w": 135,
+    "h": 315
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 135,
+    "h": 315
+   },
+   "sourceSize": {
+    "w": 135,
+    "h": 315
+   },
+   "anchor": {
+    "x": 0.4222222222222222,
+    "y": 0.9904761904761905
+   }
+  },
+  "aranha_step_1": {
+   "frame": {
+    "x": 816,
+    "y": 2,
+    "w": 155,
+    "h": 307
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 155,
+    "h": 307
+   },
+   "sourceSize": {
+    "w": 155,
+    "h": 307
+   },
+   "anchor": {
+    "x": 0.535483870967742,
+    "y": 0.990228013029316
+   }
+  },
+  "aranha_step_3": {
+   "frame": {
+    "x": 2,
+    "y": 359,
+    "w": 160,
+    "h": 307
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 307
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 307
+   },
+   "anchor": {
+    "x": 0.525,
+    "y": 0.990228013029316
+   }
+  },
+  "aranha_flip_2": {
+   "frame": {
+    "x": 164,
+    "y": 359,
+    "w": 192,
+    "h": 297
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 192,
+    "h": 297
+   },
+   "sourceSize": {
+    "w": 192,
+    "h": 297
+   },
+   "anchor": {
+    "x": 0.5572916666666666,
+    "y": 0.9865319865319865
+   }
+  },
+  "aranha_web_1": {
+   "frame": {
+    "x": 358,
+    "y": 359,
+    "w": 257,
+    "h": 287
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 257,
+    "h": 287
+   },
+   "sourceSize": {
+    "w": 257,
+    "h": 287
+   },
+   "anchor": {
+    "x": 0.5486381322957199,
+    "y": 0.9895470383275261
+   }
+  },
+  "aranha_pose2": {
+   "frame": {
+    "x": 617,
+    "y": 359,
+    "w": 177,
+    "h": 201
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 177,
+    "h": 201
+   },
+   "sourceSize": {
+    "w": 177,
+    "h": 201
+   },
+   "anchor": {
+    "x": 0.576271186440678,
+    "y": 0.9850746268656716
+   }
+  },
+  "aranha_defeat_1": {
+   "frame": {
+    "x": 796,
+    "y": 359,
+    "w": 191,
+    "h": 190
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 191,
+    "h": 190
+   },
+   "sourceSize": {
+    "w": 191,
+    "h": 190
+   },
+   "anchor": {
+    "x": 0.47643979057591623,
+    "y": 0.9842105263157894
+   }
+  },
+  "aranha_pose2_b": {
+   "frame": {
+    "x": 2,
+    "y": 668,
+    "w": 177,
+    "h": 189
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 177,
+    "h": 189
+   },
+   "sourceSize": {
+    "w": 177,
+    "h": 189
+   },
+   "anchor": {
+    "x": 0.576271186440678,
+    "y": 0.9841269841269841
+   }
+  },
+  "aranha_flip_1": {
+   "frame": {
+    "x": 181,
+    "y": 668,
+    "w": 169,
+    "h": 185
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 169,
+    "h": 185
+   },
+   "sourceSize": {
+    "w": 169,
+    "h": 185
+   },
+   "anchor": {
+    "x": 0.5562130177514792,
+    "y": 0.9945945945945946
+   }
+  },
+  "aranha_pose1": {
+   "frame": {
+    "x": 352,
+    "y": 668,
+    "w": 205,
+    "h": 182
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 205,
+    "h": 182
+   },
+   "sourceSize": {
+    "w": 205,
+    "h": 182
+   },
+   "anchor": {
+    "x": 0.45365853658536587,
+    "y": 0.967032967032967
+   }
+  },
+  "aranha_pose1_b": {
+   "frame": {
+    "x": 559,
+    "y": 668,
+    "w": 205,
+    "h": 173
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 205,
+    "h": 173
+   },
+   "sourceSize": {
+    "w": 205,
+    "h": 173
+   },
+   "anchor": {
+    "x": 0.45365853658536587,
+    "y": 0.9653179190751445
+   }
+  },
+  "spiderDive": {
+   "frame": {
+    "x": 181,
+    "y": 668,
+    "w": 169,
+    "h": 185
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 169,
+    "h": 185
+   },
+   "sourceSize": {
+    "w": 169,
+    "h": 185
+   },
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   }
+  }
+ },
+ "meta": {
+  "image": "aranha.png",
+  "format": "RGBA8888",
+  "size": {
+   "w": 1024,
+   "h": 859
+  },
+  "scale": 0.75,
+  "source": "scripts/bake-bosses.mjs"
+ }
+}

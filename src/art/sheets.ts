@@ -22,8 +22,8 @@ export const RAFAGYM = {
   cheer: { frames: ['cheer_0', 'cheer_1'], perBeat: 2, loop: true },
 } satisfies Record<string, SheetAnim>;
 
-/** Gym Fabinho (level-1 boss), v2 sheet (fabinho-v2-gym.PNG), drawn 1:1, standing ≈ 170 px. Origin x = his face,
- *  y = feet; frames face right. `g_` frames are row-2 poses scaled to his in-game height. His run row is a genuine
+/** Gym Fabinho (level-1 boss), v2 sheet (fabinho-v2-gym.PNG), scaled ×1.32 when sliced: standing ≈ 236 px, 1.18 × gym
+ *  Rafa. Origin x = his face, y = feet; frames face right. `g_` frames are row-2 poses scaled to his in-game height. His run row is a genuine
  *  cycle (also drawn by src/game/fabinhoGym.ts). `defeated` is his idle pose baked turned 90° (lying on the floor);
  *  `land` is his idle pose. */
 export const FABINHOGYM_ATLAS = 'fabinhogym';

@@ -605,12 +605,21 @@ const standardAnchors = (sprites) => Object.fromEntries(sprites.map((s) =>
   [s.name, [/^(face_|prop_)/.test(s.name) ? Math.round(s.w / 2) : faceX(s.png), s.h - RING]]));
 
 // Gym Fabinho v2 (level-1 boss). His run row is a genuine cycle.
+// His sheet is drawn smaller than gym Rafa's (head ~0.77× hers at 1:1), so his in-game frames are scaled up uniformly
+// until he stands FAB_H = 1.18 × her standing height (Murilo's ratio); that also brings his head to her head's size.
 // Knocked flat = his scaled idle pose turned 90° clockwise (a lossless pixel transpose: head to the right).
 const fabgym = slice('art-src/characters/fabinho-v2-gym.PNG', FABINHOGYM_SHEET);
 const FABINHOGYM_ANCHOR = standardAnchors(fabgym);
 {
-  const g = gPoses(byName(fabgym), FABINHOGYM_ANCHOR,
-    ['pose_idle', 'pose_wave', 'pose_phone', 'pose_laugh', 'pose_armscrossed', 'pose_armsup', 'pose_think', 'pose_point']);
+  const FB = byName(fabgym), FAB_H = Math.round(1.18 * (byName(gym).stand_0.h - 2 * RING)), k = FAB_H / (FB.back_0.h - 2 * RING);
+  for (const s of fabgym.filter((f) => /^run_\d$/.test(f.name))) {
+    const r = downscale(s.png, k, FABINHOGYM_ANCHOR[s.name]);
+    Object.assign(s, { png: r.png, w: r.png.width, h: r.png.height });
+    FABINHOGYM_ANCHOR[s.name] = r.anchor;
+  }
+  const g = gPoses(FB, FABINHOGYM_ANCHOR,
+    ['pose_idle', 'pose_wave', 'pose_phone', 'pose_laugh', 'pose_armscrossed', 'pose_armsup', 'pose_think', 'pose_point'], FAB_H);
+  console.log(`  fabinhogym: × ${k.toFixed(3)} (standing ${FAB_H} px)`);
   const src = g.find((f) => f.name === 'g_pose_idle').png, png = new PNG({ width: src.height, height: src.width });
   for (let y = 0; y < png.height; y++) for (let x = 0; x < png.width; x++) {
     src.data.copy(png.data, (y * png.width + x) * 4, ((src.height - 1 - x) * src.width + y) * 4, ((src.height - 1 - x) * src.width + y) * 4 + 4);
@@ -695,12 +704,13 @@ function stretchBody(png, [ax, ay], sy, sx) {
 }
 
 const WEDDING = {
-  // Giovanni is taller than Rafa: his body (below the neck) is stretched so he stands this tall, head kept at scale.
-  giovanni: { src: 'art-src/characters/giovanni-sheet.PNG', names: GIOVANNI_SHEET, stretch: { height: 212, widen: 1.06 },
+  // Standing heights vs the crutch Rafa (back_0, 180 px): Nathalia 0.95, Giovanni 1.10, Murilo 1.18 (= Fabinho). The
+  // body (below the neck) is stretched so each stands this tall, head kept at scale.
+  giovanni: { src: 'art-src/characters/giovanni-sheet.PNG', names: GIOVANNI_SHEET, stretch: { height: 198, widen: 1.06 },
     ui: [['turn_34', 'giovanni'], ['pose_phone', 'giovanni_phone']] },
-  nathalia: { src: 'art-src/characters/nathalia-sheet.PNG', names: NATHALIA_SHEET,
+  nathalia: { src: 'art-src/characters/nathalia-sheet.PNG', names: NATHALIA_SHEET, stretch: { height: 171, widen: 1 },
     ui: [['turn_34', 'nathalia_turn_34']] },
-  murilo: { src: 'art-src/characters/murilo-sheet.PNG', names: MURILO_SHEET,
+  murilo: { src: 'art-src/characters/murilo-sheet.PNG', names: MURILO_SHEET, stretch: { height: 212, widen: 1.06 },
     ui: [['turn_34', 'murilo_turn_34']] },
 };
 const stretchLog = [];
@@ -724,7 +734,7 @@ for (const [who, c] of Object.entries(WEDDING)) {
       const r = stretchBody(f.png, anchors[f.name], sy, sx);
       Object.assign(f, { png: r.png, w: r.png.width, h: r.png.height });
       anchors[f.name] = r.anchor;
-      stretchLog.push(`${f.name}: neck ${r.neck}/${r.png.height}`);
+      stretchLog.push(`${who} ${f.name}: neck ${r.neck}/${r.png.height}`);
     }
     // DOM images (1:1 big rows): the two sheets' big rows are not drawn at the same scale, so each is fitted to Rafa's
     // matching image instead — head kept, body stretched until he stands RATIO × her height there. Faces stay as they are.
@@ -807,7 +817,7 @@ onion('slice-poses.png', R_ALL, RAFA_ANCHOR, [seq('roll_', 5), ['push_0', 'armsu
 onion('slice-gym-run.png', gym, RAFAGYM_ANCHOR, [seq('run_', 5), seq('walk_', 5), ['stand_0', 'stand_1']], 220, 240);
 contact('slice-gym-rig.png', rigParts);
 contact('slice-fabinhogym.png', fabgym);
-onion('slice-fabgym-cycles.png', fabgym, FABINHOGYM_ANCHOR, [seq('run_', 5), seq('walk_', 4)], 220, 240);
+onion('slice-fabgym-cycles.png', fabgym, FABINHOGYM_ANCHOR, [seq('run_', 5), seq('walk_', 4)], 220, 270);
 contact('slice-rafamuleta.png', muleta);
 onion('slice-muleta-cycles.png', muleta, RAFAMULETA_ANCHOR, [seq('crutch_', 5), seq('walk_', 4), seq('dance_', 5)], 220, 240);
 for (const [who, w] of Object.entries(wedding)) {
@@ -839,6 +849,6 @@ onion('slice-gym-moves.png', gym, RAFAGYM_ANCHOR, [['crouch', 'leap', 'leap_up',
   const big = new PNG({ width: img.width * 2, height: img.height * 2 });
   for (let y = 0; y < big.height; y++) for (let x = 0; x < big.width; x++) img.data.copy(big.data, (y * big.width + x) * 4, ((y >> 1) * img.width + (x >> 1)) * 4, ((y >> 1) * img.width + (x >> 1)) * 4 + 4);
   fs.writeFileSync(path.join(CHECK, 'giovanni-height.png'), PNG.sync.write(big));
-  console.log('giovanni stretch necks:', stretchLog.join(', '));
+  console.log('stretch necks:', stretchLog.join(', '));
 }
 console.log(`checks in ${CHECK}/`);
