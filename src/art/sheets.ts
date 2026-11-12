@@ -44,9 +44,8 @@ export const FABINHOGYM = {
   squat: { frames: ['squat_0', 'squat_1', 'squat_2', 'squat_1'], perBeat: 2, loop: true }, // deepest on beat 1 of 2
   pushup: { frames: ['pushup_1', 'pushup_2', 'pushup_0', 'pushup_2'], perBeat: 4, loop: true }, // chest down on the beat
   pullup: { frames: ['pullup_0', 'pullup_1', 'pullup_2', 'pullup_1'], perBeat: 2, loop: true }, // chin over on beat 1 of 2
-  burpee: { // crouch, plank (chest down), crouch, jump (peak on beat 3 of 4), land
-    frames: ['burpee_0', 'burpee_0', 'burpee_0', 'burpee_0', 'burpee_1', 'burpee_1', 'burpee_2', 'burpee_2',
-      'burpee_0', 'burpee_0', 'burpee_3', 'burpee_4', 'burpee_4', 'burpee_3', 'burpee_3', 'burpee_3'],
+  burpee: { // crouch, plank, plank low on beat 1 of 2, crouch, jump (landed on the next beat)
+    frames: ['burpee_0', 'burpee_0', 'burpee_1', 'burpee_1', 'burpee_2', 'burpee_3', 'burpee_4', 'burpee_4'],
     perBeat: 4, loop: true,
   },
 } satisfies Record<string, SheetAnim>;

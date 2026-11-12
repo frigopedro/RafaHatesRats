@@ -34,10 +34,15 @@ export interface Idle { from: number; to: number; k: number }
 // as idle: he exercises instead.
 const busy = (name: string, r: number) =>
   name === 'enter' ? 3 : name === 'exit' ? Infinity : name.startsWith('taunt') ? 0 : r + (name === 'shockwave' ? 0.5 : 0.6);
-const LEAD = 1, MIN = 4; // back in his run ≥ 1 beat before the next telegraph; shorter windows stay as they were
+const LEAD = 1; // back in his run ≥ 1 beat before the next telegraph
 
-/** The windows (≥ MIN beats) between the end of one busy move and LEAD beats before the next, all before `until`
- *  (the level's finale: from there his Gelol-finale behaviour wins). */
+export const EXERCISES = ['squat', 'pushup', 'pullup', 'burpee'] as const;
+const repOf = (k: number) => { const a = FABINHOGYM[EXERCISES[k % EXERCISES.length]]; return a.frames.length / a.perBeat; };
+const firstBeat = (w: { from: number }) => Math.ceil(w.from - 1e-6);
+
+/** The windows between the end of one busy move and LEAD beats before the next, all before `until` (the level's
+ *  finale: from there his Gelol-finale behaviour wins), that fit one whole rep of the exercise due next; shorter
+ *  windows stay as they were. */
 export function idleWindows(cues: BossCue[], until = Infinity): Idle[] {
   const out: Idle[] = [];
   let free: number | undefined; // when his last busy move ends
@@ -45,22 +50,21 @@ export function idleWindows(cues: BossCue[], until = Infinity): Idle[] {
     const b = busy(c.name, c.release);
     if (b <= 0) continue;
     const to = Math.min(c.beat - LEAD, until);
-    if (free !== undefined && to - free >= MIN) out.push({ from: free, to, k: out.length });
+    if (free !== undefined && to - firstBeat({ from: free }) >= repOf(out.length)) out.push({ from: free, to, k: out.length });
     free = Math.max(free ?? -Infinity, c.beat + b);
   }
   return out;
 }
 
-export const EXERCISES = ['squat', 'pushup', 'pullup', 'burpee'] as const;
 export const BAR = 2.85; // pull-up bar height, blocks: his hanging feet just off the floor (slice log: 260 px below it)
 export const BAR_HALF = 88; // the bar's half-width, px (slice log)
 
 /** His exercise at `beat` in window `w`: whole reps from the window's first whole beat, or null (he runs). */
 export function exercise(w: Idle, beat: number): { frame: string; lift: number; skid: boolean; bar: boolean } | null {
-  const name = EXERCISES[w.k % EXERCISES.length], a = FABINHOGYM[name], rep = a.frames.length / a.perBeat;
-  const start = Math.ceil(w.from - 1e-6), t = beat - start;
+  const name = EXERCISES[w.k % EXERCISES.length], a = FABINHOGYM[name], rep = repOf(w.k);
+  const start = firstBeat(w), t = beat - start;
   if (t < 0 || t >= Math.floor((w.to - start) / rep) * rep) return null;
-  const frame = animFrame(a, t), u = ((t % rep) - 2.75) / 0.5; // burpee: airborne 2.75–3.25, peak on beat 3
+  const frame = animFrame(a, t), u = ((t % rep) - 1.5) / 0.5; // burpee: airborne 1.5–2, landing on the beat
   const bar = name === 'pullup', lift = bar ? BAR : frame === 'burpee_4' ? 2.4 * u * (1 - u) : 0;
   return { frame, lift, skid: !bar && lift === 0, bar };
 }

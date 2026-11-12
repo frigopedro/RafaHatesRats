@@ -18,9 +18,9 @@ const cues: BossCue[] = level1.chart.flatMap((e) => {
 const W = idleWindows(cues, level1.sections.find((s) => s.name === 'finale')!.beat);
 
 describe('Fabinho exercises (level 1)', () => {
-  it('one window per taunt break; the gap before the Gelol finale (132.1–136) is too short', () => {
-    expect(W.map((w) => [w.from, w.to, w.k])).toEqual([[83, 87.5, 0], [expect.closeTo(102.6), 107, 1], [116, 120.5, 2]]);
-    expect(idleWindows(cues)).toHaveLength(4); // without the finale cut it would hold burpees, 133–137
+  it('one window per taunt break, then one burpee before the Gelol finale; the short gaps between attacks stay plain', () => {
+    expect(W.map((w) => [w.from, w.to, w.k])).toEqual([[83, 87.5, 0], [expect.closeTo(102.6), 107, 1], [116, 120.5, 2], [expect.closeTo(132.1), 136, 3]]);
+    expect([132.9, 133, 134.9, 135].map((b) => exercise(W[3], b) !== null)).toEqual([false, true, true, false]); // 133–135
   });
 
   it('key frames land on the beat', () => {
@@ -28,9 +28,10 @@ describe('Fabinho exercises (level 1)', () => {
     expect([84, 86].map((b) => at(0, b)?.frame)).toEqual(['squat_2', 'squat_2']); // deepest
     expect([103, 104, 105, 106].map((b) => at(1, b)?.frame)).toEqual(Array(4).fill('pushup_1')); // chest down
     expect([117, 119].map((b) => at(2, b)?.frame)).toEqual(['pullup_2', 'pullup_2']); // chin over the bar
-    const jump = [135.8, 136, 136.2].map((b) => exercise({ from: 132.1, to: 137, k: 3 }, b)!); // a 4th window
+    expect(at(3, 134)?.frame).toBe('burpee_2'); // plank low on the middle beat
+    const jump = [134.55, 134.75, 134.95].map((b) => at(3, b)!);
     expect(jump.map((e) => e.frame)).toEqual(Array(3).fill('burpee_4'));
-    expect(jump[1].lift).toBeGreaterThan(jump[0].lift); // peak on beat 136
+    expect(jump[1].lift).toBeGreaterThan(jump[0].lift); // up, then landed by 135
     expect(jump[1].lift).toBeGreaterThan(jump[2].lift);
   });
 
