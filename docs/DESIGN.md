@@ -125,7 +125,9 @@ Overdrive adds an intensity layer. SFX for jump, land, coin, Gelol, Whey, Pré-t
 
 ## 6. Screens (DOM overlay, `src/ui/`, built)
 
-Menu · Fases (three cards) · Ajustes (música, efeitos, reduzir efeitos, apagar progresso) · HUD (reactive Rafa portrait, progress, Gelol ring, indicators, dumbbells, attempt, pause) · Pausa · Game over (face, joke, progress, tap anywhere to retry) · Vitória · Vire o celular. Font: Jersey 15. Save: `localStorage` key `rhr.save.v1`.
+Menu · Fases (three cards) · Ajustes (música, efeitos, reduzir efeitos, tela cheia, apagar progresso) · HUD (reactive Rafa portrait, progress, Gelol ring, indicators, dumbbells, attempt, pause) · Pausa · Game over (face, joke, progress bar with the best as a tick, tap anywhere to retry) · Vitória (stat tiles) · Vire o celular. Font: Jersey 15. Save: `localStorage` key `rhr.save.v1`.
+
+**The menus are places in the game.** `.scene[data-theme]` is a level's backdrop as DOM, built from the bg manifest (layers, overlays, ground; `--px` from container height, `--top`/`--floor` crop it, ground on the bottom). The title shows the scene of the level JOGAR starts, drifting slowly with one beat-blinking detail (gym neon, church windows, party guests), the logo on a sign hanging from two chains, JOGAR naming that level, a progress strip, and the whole cast on the floor (one Rafa: that level's). Fases and Ajustes sit on the same scene dimmed; each Fases card is a window onto its own level's scene with its pair (RATIO heights), a numeral, a plaque, and the level's frame colour (gold + CONCLUÍDA when done). Pause, game over and victory keep overlaying the level, in the shared `.panel` (pixel bevel frame, dither, rivets, title tab, level colours). No scene exists during a run; motion is off with Reduzir efeitos / prefers-reduced-motion. JOGAR and a Fases card request fullscreen + landscape lock where the API exists; on iPhone (no API, not standalone) the title and Ajustes explain Adicionar à Tela de Início.
 
 ## 7. Architecture (as built)
 

@@ -12,7 +12,7 @@ import { getSettings, levelSave, onSettings, persist, type Settings } from './sa
 import { solve, type TraceInput } from './sim/solver';
 import type { GameControl, LevelDef, SimEvent } from './types';
 import * as ui from './ui/screens';
-import { harden } from './ui/shell';
+import { fullscreen, harden } from './ui/shell';
 
 // Dev flags: ?level=<id or 1-based index> ?t=<start beat> ?bot=1 (autoplay the solver trace) ?debug=1 (hitboxes). With ?bot or ?level
 // the menu is skipped. Dev server only: ?screen=menu|fases|ajustes|pause|hud|over|victory (&cause=<hazard>
@@ -147,14 +147,15 @@ function menu() {
   clearTimeout(winTimer);
   setState('menu'); // a paused run is simply abandoned; JOGAR restarts
   ui.hud.show(false);
-  ui.menu({
+  ui.menu(nextLevel(), {
     jogar() {
       void audio.unlock(); // iOS: must happen inside this click handler
+      fullscreen(); // likewise needs the gesture; no-op where unsupported (iPhone: Home Screen only)
       startLevel(nextLevel());
     },
     fases() {
       setState('fases');
-      ui.fases({ voltar: menu, play: startLevel });
+      ui.fases({ voltar: menu, play: (d) => (fullscreen(), startLevel(d)) });
     },
     ajustes() {
       setState('ajustes');

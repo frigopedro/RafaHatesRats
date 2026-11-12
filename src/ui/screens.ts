@@ -3,8 +3,10 @@
 import { HAZARDS, OVERDRIVE, PRE_TICKS, TICKS_PER_BEAT as TPB } from '../config';
 import { LEVELS } from '../levels';
 import { getSettings, levelSave, onSettings, resetProgress, setSettings, type Settings } from '../save';
-import type { HazardKind, LevelDef, SimEvent } from '../types';
-import { deathCard } from './jokes';
+import type { BgManifest } from '../game/background';
+import type { HazardKind, LevelDef, SimEvent, Theme } from '../types';
+import { deathCard, menuLine } from './jokes';
+import { canFullscreen, FS_HINT, fullscreen, isStandalone } from './shell';
 
 type Acts = Record<string, () => void>;
 
@@ -66,6 +68,8 @@ const esc = (s: string) => s.replace(/[&<>"]/g, (c) => `&#${c.charCodeAt(0)};`);
 const img = (name: string, cls = '', alt = '') => `<img src="art/ui/${name}" class="${cls}" alt="${alt}" draggable="false">`;
 
 let root: HTMLElement, layer: HTMLElement, live: HTMLElement;
+let bg: BgManifest | null = null; // the levels' backdrops (public/art/bg/manifest.json), for .scene
+let home: LevelDef = LEVELS[0]; // the level JOGAR starts: its scene is behind the title, Fases and Ajustes
 let acts: Acts = {};
 let tapAct: (() => void) | null = null; // game over: a tap anywhere / Space / Enter
 let tapArmedAt = 0;
@@ -103,7 +107,7 @@ export function init(el: HTMLElement, onPause: () => void, sound: (name: 'click'
   // Item icons are cropped from the props atlas (1 CSS px per art px, pixelated); CSS shapes stand in until it loads.
   fetch('art/props.json').then((r) => r.json()).then((j) => {
     const url = new URL(`art/${j.meta.image}`, document.baseURI).href, { w, h } = j.meta.size;
-    for (const k of ['gelol', 'pre', 'whey']) {
+    for (const k of ['gelol', 'pre', 'whey', 'star']) {
       const f = j.frames[k]?.frame;
       if (!f) continue;
       root.style.setProperty(`--spr-${k}`, `url("${url}") -${f.x}px -${f.y}px / ${w}px ${h}px no-repeat`);
@@ -111,6 +115,11 @@ export function init(el: HTMLElement, onPause: () => void, sound: (name: 'click'
       root.style.setProperty(`--spr-${k}-h`, `${f.h}px`);
     }
   }).catch(() => {});
+  fetch('art/bg/manifest.json').then((r) => r.json()).then((m) => ((bg = m), fillScenes())).catch(() => {});
+  document.addEventListener('fullscreenchange', () => {
+    const b = layer.querySelector('[data-act=tela]');
+    if (b) b.textContent = fsLabel();
+  });
   for (const c of CARDS) for (const f of FACES) if (!(c.noSad && f === 'sad')) new Image().src = `art/ui/${c.faces}${f}.png`; // HUD swaps must not flash
 
   layer.addEventListener('click', (e) => {
@@ -153,6 +162,38 @@ function show(cls: string, html: string, a: Acts, focus = 'button:not([disabled]
   layer.innerHTML = html;
   layer.hidden = false;
   layer.querySelector<HTMLElement>(focus)?.focus({ preventScroll: true });
+  fillScenes();
+}
+
+/** A level's baked backdrop (CSS .scene): the manifest's layers back→front with their overlays, then the ground. Static
+ *  unless `cls` has `drift` (title: slow parallax walk + one beat-blinking detail). Filled once the manifest is in. */
+const scene = (theme: Theme, cls = '', beatMs = 500) =>
+  `<span class="scene ${cls}" data-theme="${theme}" style="--beat:${Math.round(beatMs)}ms" aria-hidden="true"></span>`;
+// The one living detail per theme: these overlays flip to their second frame for half of each beat (--n beats).
+const FLIP: Record<string, number> = { neon: 1, windows_a: 2, windows_b: 2, guests: 1 };
+
+function fillScenes(): void {
+  if (!bg) return;
+  const u = (f: string) => `url(art/${f})`;
+  for (const el of layer.querySelectorAll<HTMLElement>('.scene:empty')) {
+    const t = bg.themes[el.dataset.theme as Theme];
+    if (!t) continue;
+    el.style.backgroundColor = t.skyColor;
+    el.innerHTML = t.layers.map((l) => {
+      // overlays sit at each `at` point in every tile repeat; the layer is one tile wider than the view, so two repeats
+      const ovs = (t.overlays ?? []).filter((o) => o.layer === l.name).flatMap((o) => {
+        const fr = Object.values(o.frames), n = FLIP[o.name];
+        const f0 = o.name === 'windows_b' ? 'none' : u(fr[0]), f1 = fr.length > 1 ? u(fr[1]) : o.name === 'windows_b' ? u(fr[0]) : 'none';
+        return o.at.flatMap(([x, y]) => [0, l.width].map((dx) =>
+          `<b class="${n ? 'flip' : ''}" style="--x:${x + dx};--oy:${y};--ow:${o.width};--oh:${o.height};--f0:${f0};--f1:${f1};--n:${n ?? 1}"></b>`));
+      });
+      if (l.frames && FLIP[l.name]) ovs.push(`<b class="flip tile" style="--f0:none;--f1:${u(l.frames[1])}"></b>`);
+      return `<i style="--w:${l.width};--h:${l.height};--y:${l.y};--p:${l.parallax};--f0:${u(l.frames?.[0] ?? l.file)}">${ovs.join('')}</i>`;
+    }).join('') + (() => {
+      const g = t.ground, imgs = [...(g.overlays ?? []).slice(0, 1).map((o) => u(o.file)), u(g.top.file)]; // party: one lit floor set
+      return `<i class="gnd" style="--w:${g.top.width};--th:${g.top.height};--p:1;background-image:${imgs.join(',')};--fill:${u(g.fill.file)}"></i>`;
+    })();
+  }
 }
 
 /** Back to the game: no screen, focus off any button so Space is a jump again. */
@@ -167,21 +208,36 @@ export function loading(): void {
   show('dim center', `<p class="loading">Carregando…</p>`, {}, '.loading');
 }
 
-export function menu(a: { jogar(): void; fases(): void; ajustes(): void }): void {
-  show('bg menu', `
+/** Golden dumbbells kept over all levels / all there are. */
+const allCoins = () => LEVELS.reduce((a, d) => [a[0] + levelSave(d.id).coins, a[1] + coinTotal(d)], [0, 0]);
+const coinsTag = () => `<span class="coins"><i class="ico ico-coin"></i><b>${allCoins().join('/')}</b></span>`;
+
+/** Title: the next level's scene, drifting; the logo sign, JOGAR naming that level, the whole cast on the floor. */
+export function menu(next: LevelDef, a: { jogar(): void; fases(): void; ajustes(): void }): void {
+  home = next;
+  const card = cardOf(next) ?? CARDS[0], n = CARDS.indexOf(card) + 1;
+  const done = CARDS.filter((c) => levelSave(c.id).done).length;
+  const pips = CARDS.map((c, i) => `<i class="pip${levelSave(c.id).done ? ' done' : c === card ? ' now' : ''}">${i + 1}</i>`).join('');
+  // Group photo, left to right; Rafa (this level's) in front, the rest overlapping a little. Feet share one floor line.
+  const cast = [img('aranha_pose1.png', 'px'), img('fabinhogym_turn_34.png'),
+    `<span class="say" style="--rr:${Math.max(ratioOf(card.kit), RATIO['fabinhogym_turn_34.png'])}"><span class="bubble">${esc(menuLine(card.id))}</span></span>`,
+    img(card.kit, 'rafa', 'Rafa'), img('giovanni.png'), img('nathalia_turn_34.png'), img('murilo_turn_34.png')].join('');
+  const hint = !canFullscreen() && !isStandalone() ? `<p class="fs-hint">${FS_HINT}</p>` : '';
+  show('menu', `
+    ${scene(next.theme, 'drift title', 60000 / next.bpm)}
     <div class="menu-col">
-      <h1 class="logo"><img src="art/logo.png" alt="RafaHatesRats" draggable="false"><span>Rafa<b>Hates</b>Rats</span></h1>
-      <nav class="stack">
-        <button class="btn big" data-act="jogar">JOGAR</button>
-        <button class="btn teal" data-act="fases">FASES</button>
-        <button class="btn sage" data-act="ajustes">AJUSTES</button>
-      </nav>
+      <div class="sign" data-theme="${next.theme}"><h1 class="logo panel"><img src="art/logo.png" alt="RafaHatesRats" draggable="false"><span>Rafa<b>Hates</b>Rats</span></h1></div>
+      <button class="btn big play" data-act="jogar">JOGAR<small>Fase ${n}: ${esc(next.name)}</small></button>
+      <div class="pair"><button class="btn teal" data-act="fases">FASES</button><button class="btn sage" data-act="ajustes">AJUSTES</button></div>
+      <div class="trail"><span class="pips">${pips}</span>${coinsTag()}<span class="sr">${done} de ${CARDS.length} fases concluídas</span></div>
+      ${hint}
     </div>
-    <div class="hero-wrap">${img('rafa_pose_wave.png', 'hero bob', 'Rafa acenando')}</div>`, a);
+    <div class="stage"><div class="cast fig overlap">${cast}</div></div>`, a);
+  fitFigures(layer.querySelector('.stage')!, '.cast', 0.15);
 }
 
-const header = (title: string) =>
-  `<header class="top"><button class="btn small sage" data-act="voltar">◀ VOLTAR</button><h2>${title}</h2></header>`;
+const header = (title: string, right = '') =>
+  `<header class="top"><button class="btn small sage" data-act="voltar">◀ VOLTAR</button><h2>${title}</h2>${right}</header>`;
 
 export function fases(a: { voltar(): void; play(d: LevelDef): void }): void {
   const cardActs: Acts = { voltar: a.voltar };
@@ -189,39 +245,49 @@ export function fases(a: { voltar(): void; play(d: LevelDef): void }): void {
     const def = levelById(c.id);
     if (def) cardActs[`lv-${c.id}`] = () => a.play(def);
     const s = levelSave(c.id);
-    const stats = def
-      ? `<span class="stats"><span>Melhor <b>${s.best}%</b></span><span><i class="ico ico-coin"></i> <b>${s.coins}/${coinTotal(def)}</b></span><span>Tentativas <b>${s.attempts}</b></span></span>`
-      : '';
-    const badge = !def ? '<span class="badge soon">EM BREVE</span>' : s.done ? '<span class="badge">CONCLUÍDA ✓</span>' : '';
+    const plaque = def
+      ? `<span class="best"><span class="bar"><i style="--p:${s.best / 100}"></i></span><b>${s.best}%</b></span>
+        <span class="stats"><span><i class="ico ico-coin"></i> <b>${s.coins}/${coinTotal(def)}</b></span><span>Tentativas <b>${s.attempts}</b></span></span>`
+      : '<span class="soon">Em breve</span>';
     return `
-      <button class="card" data-act="lv-${c.id}"${def ? '' : ' disabled'}>
-        <span class="card-n">FASE ${i + 1}</span>
-        <span class="card-title">${esc(def?.name ?? c.name)}</span>
-        <span class="card-art fig overlap">${img(c.kit, 'kit')}${img(c.side, `boss${c.sidePx ? ' px' : ''}`)}</span>
-        <span class="card-boss">${c.sub}</span>
-        ${stats}${badge}
+      <button class="card${s.done ? ' done' : ''}" data-act="lv-${c.id}" data-theme="${def?.theme ?? c.id}"${def ? '' : ' disabled'}>
+        <span class="win">${scene(def?.theme ?? (c.id as Theme))}<span class="card-art fig overlap">${img(c.kit, 'kit')}${img(c.side, `boss${c.sidePx ? ' px' : ''}`)}</span></span>
+        <span class="num" aria-label="Fase ${i + 1}">${i + 1}</span>
+        ${s.done ? '<span class="ribbon">CONCLUÍDA</span>' : ''}
+        <span class="plaque">
+          <span class="card-title">${esc(def?.name ?? c.name)}</span>
+          <span class="card-boss">${c.sub}</span>
+          ${plaque}
+        </span>
       </button>`;
   }).join('');
-  show('bg fases', `${header('FASES')}<div class="cards">${cards}</div>`, cardActs, '.card:not([disabled])');
+  show('fases', `${scene(home.theme, 'dim')}${header('Fases', coinsTag())}<div class="cards">${cards}</div>`, cardActs, '.card:not([disabled])');
   fitFigures(layer.querySelector('.cards')!, '.card-art', 0.15);
 }
+
+const fsLabel = () => (document.fullscreenElement ? 'SAIR' : 'ATIVAR');
 
 export function ajustes(a: { voltar(): void }): void {
   const s = getSettings();
   const range = (key: 'music' | 'sfx', label: string) =>
-    `<label class="row"><span class="lbl">${label}</span><input type="range" min="0" max="100" step="5" value="${s[key]}" data-set="${key}"><output>${s[key]}</output></label>`;
-  show('bg ajustes', `
-    ${header('AJUSTES')}
+    `<label class="row"><span class="lbl">${label}</span><input type="range" min="0" max="100" step="5" value="${s[key]}" data-set="${key}" style="--v:${s[key]}%"><output>${s[key]}</output></label>`;
+  const tela = isStandalone() ? '<span class="note">Já está em tela cheia.</span>'
+    : canFullscreen() ? `<button class="btn small teal" data-act="tela">${fsLabel()}</button>` : `<span class="note">${FS_HINT}</span>`;
+  show('ajustes', `
+    ${scene(home.theme, 'dim')}
+    ${header('Ajustes')}
     <div class="ajustes-body">
-      <div class="panel form">
+      <div class="panel form" data-theme="${home.theme}">
         ${range('music', 'Música')}
         ${range('sfx', 'Efeitos')}
         <label class="row check"><input type="checkbox" data-set="reduceFx"${s.reduceFx ? ' checked' : ''}><span class="lbl">Reduzir efeitos<small>menos tremor, flashes e confete</small></span></label>
-        <div class="row erase"><button class="btn small red" data-act="apagar">Apagar progresso</button></div>
+        <div class="row tela"><span class="lbl">Tela cheia</span>${tela}</div>
+        <div class="row erase"><button class="link" data-act="apagar">Apagar progresso</button></div>
       </div>
       ${img('rafa_pose_point.png', 'hero side', '')}
     </div>`, {
     voltar: a.voltar,
+    tela: () => fullscreen(!document.fullscreenElement),
     apagar() {
       const row = layer.querySelector('.erase')!;
       row.innerHTML = `<span class="lbl">Apagar tudo?</span><button class="btn small red" data-act="sim">SIM, APAGAR</button><button class="btn small sage" data-act="nao">CANCELAR</button>`;
@@ -236,7 +302,7 @@ export function ajustes(a: { voltar(): void }): void {
     },
     nao() {
       const row = layer.querySelector('.erase')!;
-      row.innerHTML = `<button class="btn small red" data-act="apagar">Apagar progresso</button>`;
+      row.innerHTML = `<button class="link" data-act="apagar">Apagar progresso</button>`;
       row.querySelector<HTMLElement>('button')!.focus();
     },
   }, 'input');
@@ -247,16 +313,17 @@ export function ajustes(a: { voltar(): void }): void {
     else {
       setSettings({ [key]: Number(el.value) }); // main.ts applies volumes to the audio through onSettings()
       el.nextElementSibling!.textContent = el.value;
+      el.style.setProperty('--v', `${el.value}%`);
     }
   });
 }
 
 export function pause(d: LevelDef, a: { continuar(): void; reiniciar(): void; menu(): void }): void {
   show('dim center', `
-    <div class="panel pausa">
+    <div class="panel pausa" data-theme="${d.theme}">
+      <h2 class="tab">Pausa</h2>
       ${img(cardOf(d)?.phone ?? 'rafa_pose_phone.png', 'hero small', 'Rafa no celular')}
       <div class="stack">
-        <h2>PAUSA</h2>
         <button class="btn big" data-act="continuar">CONTINUAR</button>
         <button class="btn teal" data-act="reiniciar">REINICIAR</button>
         <button class="btn sage" data-act="menu">MENU</button>
@@ -272,12 +339,16 @@ export function gameOver(o: OverInfo, a: { retry(): void; menu(): void }): void 
   const faces = !!c.boss?.includes('_face_');
   show('dim center over', `
     <button class="btn small sage corner" data-act="menu">MENU</button>
-    <div class="panel over-card" tabindex="-1">
+    <div class="panel over-card" data-theme="${o.def.theme}" tabindex="-1">
+      <h2 class="tab">${esc(o.def.name)}</h2>
       <div class="over-art${faces ? ' fig' : ''}">${img(`${facesOf(o.def)}${c.face === 'sad' && cardOf(o.def)?.noSad ? 'shocked' : c.face}.png`, 'over-face', '')}${c.boss ? img(c.boss, `over-boss${c.px ? ' px' : ''}${faces ? '' : ' figure'}`) : ''}</div>
       <div class="over-text">
         <p class="joke">${c.line}</p>
-        <p class="score"><b>${o.pct}%</b> ${o.record ? '<span class="rec">NOVO RECORDE!</span>' : `<span>Recorde ${o.best}%</span>`}</p>
-        <p class="tap">TOQUE PARA TENTAR DE NOVO</p>
+        <div class="run" style="--p:${o.pct / 100};--b:${o.best}%">
+          <div class="bar"><i></i></div>${o.record ? '' : '<s title="Recorde"></s>'}
+        </div>
+        <p class="score"><span>Agora <b>${o.pct}%</b></span>${o.record ? '<span class="rec">Novo recorde!</span>' : `<span>Recorde <b>${o.best}%</b></span>`}</p>
+        <p class="tap">Toque para tentar de novo</p>
       </div>
     </div>`, { menu: a.menu }, '.over-card');
   if (faces) fitFigures(layer.querySelector('.over-card')!, '.over-art');
@@ -291,7 +362,7 @@ export interface WinInfo { def: LevelDef; card: Card | undefined; coins: number;
 export function victory(w: WinInfo, a: { next(): void; repetir(): void; menu(): void }): void {
   const confetti = getSettings().reduceFx ? '' : `<div class="confetti" aria-hidden="true">${Array.from({ length: 36 }, (_, i) =>
     `<i style="--x:${Math.random() * 100}%;--dx:${(Math.random() - 0.5) * 30}vw;--r:${Math.random() * 900 - 450}deg;--d:${1.2 + Math.random()}s;--w:${Math.random() * 0.4}s;--c:${['#f5c23a', '#22a39a', '#e040c0', '#a8b6a3', '#3a6fd8', '#f26b55'][i % 6]}"></i>`).join('')}</div>`;
-  const recs = [w.firstClear && 'PRIMEIRA VITÓRIA!', w.coinRecord && 'RECORDE DE HALTERES!'].filter(Boolean);
+  const recs = [w.firstClear && 'Primeira vitória!', w.coinRecord && 'Recorde de halteres!'].filter(Boolean);
   const next = w.last ? '' : w.next ? '<button class="btn big" data-act="next">PRÓXIMA FASE</button>' : '<button class="btn" disabled>PRÓXIMA FASE · EM BREVE</button>';
   // gym: a beat after "1º LUGAR!" the knee goes — the second line and the knee-hugging Rafa appear on the beat.
   const beat = `--beat:${Math.round(60000 / w.def.bpm)}ms`;
@@ -302,16 +373,16 @@ export function victory(w: WinInfo, a: { next(): void; repetir(): void; menu(): 
       ? `<div class="vit-trio fig">${img(c.flank[0], '', 'Nathalia')}${win.replace('hero small', 'mid')}${img(c.flank[1], '', 'Murilo')}</div>`
       : win;
   show('dim center', `${confetti}
-    <div class="panel vitoria">
+    <div class="panel vitoria" data-theme="${w.def.theme}">
+      <h2 class="tab">${esc(w.def.name)}</h2>
       ${art}
       <div class="vit-body">
         <h2>${(w.card?.win ?? 'FASE CONCLUÍDA!').replace('º', '<span class="ord">º</span>')}</h2>
         ${w.card?.win2 ? `<p class="win2 then-show" style="${beat}">${w.card.win2}</p>` : ''}
-        <p class="sub">${esc(w.def.name)}</p>
-        <dl class="stats-big">
-          <div><dt>Pontos</dt><dd>${w.coins * 10 + w.smashed * 5}</dd></div>
-          <div><dt>Halteres</dt><dd>${w.coins}/${w.total}</dd></div>
-          <div><dt>Tentativas</dt><dd>${w.attempts}</dd></div>
+        <dl class="tiles">
+          <div><dt><i class="ico ico-star"></i>Pontos</dt><dd>${w.coins * 10 + w.smashed * 5}</dd></div>
+          <div><dt><i class="ico ico-coin"></i>Halteres</dt><dd>${w.coins}/${w.total}</dd></div>
+          <div><dt>${img(`${facesOf(w.def)}smile.png`, 'ico ico-face')}Tentativas</dt><dd>${w.attempts}</dd></div>
         </dl>
         ${recs.length ? `<p class="rec">${recs.join(' · ')}</p>` : ''}
         <div class="btns">${next}<button class="btn teal" data-act="repetir">REPETIR</button><button class="btn sage" data-act="menu">MENU</button></div>

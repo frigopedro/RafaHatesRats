@@ -60,3 +60,11 @@ export function deathCard(cause: string, big: boolean): { line: string; face: Fa
   }
   return { line: pick(GENERIC), face: d?.face ?? (big ? 'shocked' : 'sad') };
 }
+
+// Title screen: Rafa's line for the level JOGAR starts.
+const MENU: Record<string, string[]> = {
+  gym: ['Hoje o primeiro lugar é meu. Avisa o Fabinho.', 'Gym Rats tem dona.', 'Dia de perna? Dia de pódio.'],
+  church: ['Madrinha de muleta também entra no ritmo.', 'Giovanni, me acompanha. Sem me atrasar.', 'Eu chego no altar antes da noiva.'],
+  party: ['Quem convidou esse Aranha?', 'Essa pista é minha.', 'Solta o funk que eu resolvo.'],
+};
+export const menuLine = (id: string) => pick(MENU[id] ?? MENU.gym);

@@ -42,9 +42,23 @@ const SIZES = [
   { tag: '667', viewport: { width: 667, height: 375 }, dpr: 2 },
 ];
 
-async function capture(name, query, viewport, dpr, waitState, sel, settle = 250, rewind = false, untilText = '') {
+// Saved progress for the title/Fases variants (src/save.ts format), and a stand-in for iPhone Safari (no Fullscreen API).
+const save = (...done) => ({ levels: Object.fromEntries(['gym', 'church', 'party'].map((id, i) =>
+  [id, i < done.length ? { best: 100, coins: done[i], attempts: 4 + i * 3, done: true } : { best: i === done.length ? 46 : 0, coins: 0, attempts: i === done.length ? 3 : 0, done: false }])) });
+const withSave = (s) => [(v) => localStorage.setItem('rhr.save.v1', v), JSON.stringify(s)];
+const IPHONE = [() => Object.defineProperty(Document.prototype, 'fullscreenEnabled', { get: () => false })];
+const EXTRA = [ // name, query, state, init script
+  ['menu-gymdone', '?screen=menu', 'menu', withSave(save(31))],
+  ['fases-gymdone', '?screen=fases', 'fases', withSave(save(31))],
+  ['menu-party', '?screen=menu', 'menu', withSave(save(48, 40))],
+  ['menu-iphone', '?screen=menu', 'menu', IPHONE],
+  ['ajustes-iphone', '?screen=ajustes', 'ajustes', IPHONE],
+];
+
+async function capture(name, query, viewport, dpr, waitState, sel, settle = 250, rewind = false, untilText = '', init = null) {
   const ctx = await browser.newContext({ viewport, deviceScaleFactor: dpr, isMobile: true, hasTouch: true });
   const page = await ctx.newPage();
+  if (init) await page.addInitScript(...init);
   page.on('pageerror', (e) => errors.push(`${name}: ${e}`));
   // Vite answers missing files with index.html (200), so watch for images that fail to decode instead.
   await page.addInitScript(() => addEventListener('error', (e) => e.target.src && (window.__miss ??= []).push(e.target.src), true));
@@ -65,11 +79,13 @@ async function capture(name, query, viewport, dpr, waitState, sel, settle = 250,
 try {
   for (const { tag, viewport, dpr } of SIZES) {
     for (const [name, query, state, sel, settle, rewind, until] of SCREENS) await capture(`${tag}-${name}`, query, viewport, dpr, state, sel, settle, rewind, until);
+    for (const [name, query, state, init] of EXTRA) await capture(`${tag}-${name}`, query, viewport, dpr, state, null, 250, false, '', init);
   }
   // Simulated notch (iPhone landscape safe-area insets) on the screens with edge-hugging controls.
   for (const [name, query, state, sel, settle] of SCREENS.filter(([n]) => ['menu', 'fases', 'hud-overdrive', 'gameover'].includes(n))) {
     await capture(`notch-${name}`, query + '&notch=1', SIZES[0].viewport, 3, state, sel, settle);
   }
+  await capture('notch-menu-gymdone', '?screen=menu&notch=1', SIZES[0].viewport, 3, 'menu', null, 250, false, '', withSave(save(31)));
   await capture('portrait-rotate', '', { width: 390, height: 844 }, 3, null, '.rotate p', 600);
 } finally {
   await browser.close();
